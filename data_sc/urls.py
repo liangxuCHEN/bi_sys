@@ -19,9 +19,17 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from anthony_bi import views
 
 urlpatterns = [
+    
     url(r'^admin/', admin.site.urls),
-    url(r'^add_order_date', views.add_order_date),
-    url(r'^show_order_date', views.show_order_date)
+    
+    # HTML
+    url(r'^$',views.home, name='home'),
+    url(r'^add_order_date', views.add_order_date, name='add_order_date'),
+    url(r'^show_order', views.show_order, name='show_order'),
+
+
+    # API
+    url(r'^api_show_data', views.api_show_data, name='api_show_data'),
 ]
 
 urlpatterns += staticfiles_urlpatterns()

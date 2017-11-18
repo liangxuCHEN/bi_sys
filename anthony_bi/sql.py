@@ -84,9 +84,16 @@ class Model(dict):
             fields.append(v.name)
             args.append(getattr(self, k, None))
 
-        sql = 'INSERT INTO %s(%s) VALUES (%s)' % (self.__table__, ','.join(fields), ','.join(
-            ["'%s'" % str(i) for i in args]
-        ))
+        values = ''
+        for i in args:
+            if type(i) != type(0):
+                values += "'%s'" % i.encode('utf8')
+            else:
+                values += "%d" % i
+
+            values += ','
+
+        sql = 'INSERT INTO %s(%s) VALUES (%s)' % (self.__table__, ','.join(fields), values[:-1])
         print('SQL: %s' % sql)
         try:
             with connection.cursor() as cursor:
