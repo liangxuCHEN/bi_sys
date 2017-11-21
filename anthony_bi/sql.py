@@ -124,9 +124,15 @@ class Model(dict):
                         if func == 'contains':
                             fields.append("{key} like '%{value}%'".format(key=key, value=v))
                         if func == 'lte':
-                            fields.append("{key} < {value}".format(key=key, value=v))
+                            if type(v) == type(0):
+                                fields.append("{key} <= {value}".format(key=key, value=v))
+                            else:
+                                fields.append("{key} <= '{value}'".format(key=key, value=v))
                         if func == 'gte':
-                            fields.append("{key} > {value}".format(key=key, value=v))
+                            if type(v) == type(0):
+                                fields.append("{key} >= {value}".format(key=key, value=v))
+                            else:
+                                fields.append("{key} >= '{value}'".format(key=key, value=v))
                     else:
                         raise AttributeError("'model' object has no attribute '%s'" % key)
                 else:
@@ -159,10 +165,15 @@ class LX_Test(Model):
     age = IntegerField('age')
 
 
-class Job(Model):
-    job_name = StringField('name')
+class NewTable(Model):
+    # 类别-价格
+    category = StringField('category')
+    customer = StringField('customer')
+    created = StringField('created')
+    updated = StringField('updated')
+    city = StringField('city')
     price = IntegerField('price')
-    total_num = IntegerField('total')
+    qty = IntegerField('qty')
 
 
 class Order_info(Model):
@@ -172,6 +183,7 @@ class Order_info(Model):
     updated = StringField('updated')
     state = StringField('state')
     price = IntegerField('price')
+
 
 
 def save_test():
@@ -184,11 +196,12 @@ def save_test():
 def get_test():
     # u = LX_Test().filter(email_contains='@', order_by_desc=['id', 'name'])
     # u = LX_Test().filter(name='11xoos')
-    u = Order_info.get_all()
+    u = Order_info().filter(created_gte='2017-11-20')
     # U 返回D ataFate， 继续做逻辑处理，
     # 最后返回Json结构数据
     #res = u.to_json(orient='records')
-    res = u.to_dist(orient='records')
+    res = len(u)
+    #res = u.to_dict(orient='records')
     print({'data': res, 'status': 0, 'message': 'OK'})
 
 

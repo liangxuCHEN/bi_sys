@@ -30,6 +30,7 @@ urlpatterns = [
 
     # API
     url(r'^api_show_data', views.api_show_data, name='api_show_data'),
+    url(r'^api_show_c_data', views.api_show_c_data, name='api_show_c_data'),
 ]
 
 urlpatterns += staticfiles_urlpatterns()

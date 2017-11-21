@@ -1,28 +1,78 @@
 {% extends "base.html" %}
 {% block head %}
 <script src="/static/js/echarts.js" charset="utf-8"></script>
-
+<script src="/static/map/js/china.js"></script>
+<script src="/static/js/common.js" charset="utf-8"></script>
 {% endblock %}
 
 {% block title %}Order{% endblock %}
 
 
 {% block content %}
-<div class="container-fluid">
-	<div class="row">
-	    <div class="col-md-8">
-	        <!-- 为 ECharts 准备一个具备大小（宽高）的 DOM -->
-	        <div id="main" style="height:400px;"></div>
-	    </div>
-<!-- 	    <div class="col-md-5">
-	        为 ECharts 准备一个具备大小（宽高）的 DOM
-	        <div id="bar" style="height:400px;"></div>
-	    </div> -->
-	</div>
-	<div class="row">
-		<div class="col-md-8">
-			<div id="pie" style="height:600px;"></div>
+<div class="row">
+	<div class="col-md-2">
+		<div class="row">
+		  <form action="{% url 'show_order' %}" method="get">
+			<ul class="list-group">
+			  <li class="list-group-item"><label>开始日期</label><input type="date" class="form-control" id="begin_date" name="begin_date" value="{% if begin_date %}{{ begin_date }} {% endif %}"/></li>
+			  <li class="list-group-item"><label>结束时间</label><input type="date" class="form-control" id="end_date" name="end_date" value="{% if end_date %}{{ end_date }} {% endif %}"/></li>
+			  <li class="list-group-item"><label>客户</label><br/>
+			  	 <input type="checkbox" /> 客户1<br/>
+			  	 <input type="checkbox" /> 客户2<br/>
+			  	 <input type="checkbox" /> 客户3<br/>
+			  </li>
+			  <li class="list-group-item"><label>类目</label><br/>
+			  	 <input type="checkbox" /> 类目1<br/>
+			  	 <input type="checkbox" /> 类目2<br/>
+			  	 <input type="checkbox" /> 类目3<br/>
+			  </li>
+			  <li class="list-group-item"><label>刷新频率(S)</label><input type="number" class="form-control" id="frequence" value="{{ frequence }}"/></li>
+			  <li class="list-group-item"><button type="submit" class="btn-info">筛选</button></li>
+			</ul>
+		  </form>
 		</div>
+	</div>
+
+    <div class="col-md-4">
+        <!-- 为 ECharts 准备一个具备大小（宽高）的 DOM -->
+        <div class="row">
+        	<div id="main" style="height:400px;"></div>
+        	<div id="pie" style="height:400px;"></div>
+    	</div>
+    </div>
+
+    <div class="col-md-6">
+
+    	<div class="row">
+    		<div class="col-md-3 bg-info">
+    			<p class="text-left">总额:</p>
+    			<h3>60078877  <small>3.5% <span class="glyphicon glyphicon-triangle-top"></span> </small></h3>
+    		</div>
+    		<div class="col-md-3 bg-warning">
+    			<p class="text-left">订单量:</p>
+    			<h3>4011  <small>3.5% <span class="glyphicon glyphicon-triangle-top"></span> </small></h3>
+    		</div>
+    		<div class="col-md-3 bg-success">
+    			<p class="text-left">利润:</p>
+    			<h3>60078  <small>3.5% <span class="glyphicon glyphicon-triangle-top"></span> </small></h3>
+    		</div>
+    		<div class="col-md-3 bg-danger">
+    			<p class="text-left">平均客单量:</p>
+    			<h3>600  <small>3.5% <span class="glyphicon glyphicon-triangle-top"></span> </small></h3>
+    		</div>
+    	</div>
+
+    	<div class="row">
+    		<div id="map" style="height:724px;"></div>
+    	</div>
+    	
+    </div>
+
+</div>
+
+<div class="row">
+	<div class="col-md-6">
+		
 	</div>
 </div>
 {% endblock %}
@@ -128,7 +178,7 @@
                     name: '客户订单',
                     type: 'pie',
                     selectedMode: 'single',
-                    radius: [0, '30%'],
+                    radius: [0, '40%'],
                     data: [],
                     label: {
                         normal: {
@@ -151,26 +201,27 @@
                 {
                     name:'订单状态',
                     type:'pie',
-                    radius: ['40%', '55%'],
+                    radius: ['50%', '65%'],
                     label: {
                         normal: {
-                            formatter: '{a|{a}}{abg|}\n{hr|}\n  {b|{b}：}{c}  {per|{d}%}  ',
+                            //formatter: '{a|{a}}{abg|}\n{hr|}\n  {b|{b}：}{c}  {per|{d}%}  ',
+                            formatter: '{b|{b}：}{c}  {per|{d}%}  ',
                             backgroundColor: '#2c343c',
                             borderColor: '#aaa',
                             borderWidth: 1,
                             borderRadius: 4,
                             rich: {
-                                a: {
-                                    color: '#999',
-                                    lineHeight: 22,
-                                    align: 'center'
-                                },
-                                hr: {
-                                    borderColor: '#aaa',
-                                    width: '100%',
-                                    borderWidth: 0.5,
-                                    height: 0
-                                },
+                                // a: {
+                                //     color: '#999',
+                                //     lineHeight: 22,
+                                //     align: 'center'
+                                // },
+                                // hr: {
+                                //     borderColor: '#aaa',
+                                //     width: '100%',
+                                //     borderWidth: 0.5,
+                                //     height: 0
+                                // },
                                 b: {
                                     fontSize: 16,
                                     lineHeight: 33
@@ -188,8 +239,16 @@
                 }
             ]
         });
+         var get_url = 'api_show_data'
 
-         $.get('api_show_data').done(function (response) {
+         {% if begin_date %}
+         	get_url += '?begin_date={{ begin_date }}'
+         	{% if end_date %}
+         	  get_url += '&end_date={{ end_date }}'
+         	{% endif %}
+         {% endif %}
+         
+         $.get(get_url).done(function (response) {
         	var data = response.data
         	//console.log(data)
             // 填入数据
@@ -233,10 +292,124 @@
         });
 
 
+        //测试数据
+function randomData() {
+    return Math.round(Math.random()*1000);
+}
+
+option3 = {
+	textStyle: {
+	    color: 'rgba(255, 255, 255, 0.3)',
+	},
+    title: {
+    	textStyle: {
+    	    color: 'rgba(255, 255, 255, 0.3)',
+    	},
+        text: '类目销量',
+        left: 'center'
+    },
+    tooltip: {
+        trigger: 'item'
+    },
+    legend: {
+    	textStyle: {
+    	    color: 'rgba(255, 255, 255, 0.3)',
+    	},
+        orient: 'vertical',
+        left: 'left',
+        data:[]
+    },
+    visualMap: {
+    	textStyle: {
+    	    color: 'rgba(255, 255, 255, 0.3)',
+    	},
+        min: 0,
+        max: 10000,
+        left: 'left',
+        top: 'bottom',
+        text: ['高','低'],           // 文本，默认为数值文本
+        calculable: true
+    },
+    backgroundColor: '#2c343c',
+
+    toolbox: {
+        show: true,
+        orient: 'vertical',
+        left: 'right',
+        top: 'center',
+        feature: {
+            saveAsImage: {}
+        }
+    },
+
+};
+        var myChart3 = echarts.init(document.getElementById('map'));
+        myChart3.setOption(option3)
+
+        function gene_category_series(data) {
+        	var serie = [];
+        	var category = data.category
+        	    for(var i = 0; i < category.length; i++){
+        	        var item = {
+        	            name:category[i],
+        	            type: 'map',
+        	            mapType: 'china',
+        	            label: {
+                            normal: {
+                                show: true
+                            },
+                            emphasis: {
+                                show: true
+                            }
+                        },
+        	            data: data[category[i]]
+        	        }
+        	        serie.push(item);
+        	    }
+
+        	 serie.push({
+	            type:'pie',
+	            roseType: 'angle',
+	            center:['50%','15%'],
+	            radius:[0,50],
+	            data:data.price,
+	            itemStyle: {
+	                emphasis: {
+	                    shadowBlur: 5,
+	                    shadowOffsetX: 0,
+	                    shadowColor: 'rgba(0, 0, 0, 0.5)'
+	                }
+	            }
+
+        	})
+        	return serie;
+        }
+
+        $.get('api_show_c_data').done(function (response) {
+        	var data = response.data
+        	console.log(data)
+            // 填入数据
+            myChart3.setOption({
+            	legend: {
+                    data: data.category
+                },
+                title: {
+        	    	subtext:'总数量：' + data.total_num,
+        	    },
+                series: gene_category_series(data)
+            });
+
+        });
+
+
+        
+
+
         setTimeout(function (){
             window.onresize = function () {
                 myChart.resize();
                 myChart2.resize();
+                myChart3.resize();
             }
         },200)
 
