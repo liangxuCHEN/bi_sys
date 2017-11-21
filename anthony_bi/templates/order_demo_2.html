@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 {% block head %}
 <script src="/static/js/echarts.js" charset="utf-8"></script>
+<link href="/static/css/bootstrap-table.css" rel="stylesheet">
+<script src="/static/js/Bs-Table/bootstrap-table.js"></script>
+<script src="/static/js/Bs-Table/tableExport.js"></script>
+<script src="/static/js/Bs-Table/bootstrap-table-export.js"></script>
 
 {% endblock %}
 
@@ -10,8 +14,11 @@
 {% block content %}
 
 <div class="row">
-
-<!-- 表格 -->
+    <div id='toolbar'>
+        <label style="margin-right: 10px;margin-left: 10px">开始日期: </label><input type="date" id="begin_date" name="begin_date" value="{% if begin_date %}{{ begin_date }} {% endif %}"/>
+        <label style="margin-right: 10px;margin-left: 10px">结束时间: </label><input type="date" id="end_date" name="end_date" value="{% if end_date %}{{ end_date }} {% endif %}"/>
+    </div>
+    <table id="simpleTable" class="table"></table>
 
 </div>
 
@@ -27,6 +34,283 @@
 {% block script %}
 
 <script type="text/javascript">
+
+    var xData = function() {
+    var data = [];
+    for (var i =1; i < 14; i++) {
+        data.push(i + "");
+    }
+    return data;
+}();
+
+option = {
+    backgroundColor: "#344b58",
+    "title": {
+        "text": "16年1月-16年11月充值客单分析",
+        "subtext": "BY MICVS",
+        x: "4%",
+
+        textStyle: {
+            color: '#fff',
+            fontSize: '22'
+        },
+        subtextStyle: {
+            color: '#90979c',
+            fontSize: '16',
+
+        },
+    },
+    "tooltip": {
+        "trigger": "axis",
+        "axisPointer": {
+            "type": "shadow",
+            textStyle: {
+                color: "#fff"
+            }
+
+        },
+    },
+    "grid": {
+        "borderWidth": 0,
+        "top": 110,
+        "bottom": 95,
+        textStyle: {
+            color: "#fff"
+        }
+    },
+    "legend": {
+        x: '4%',
+        top: '11%',
+        textStyle: {
+            color: '#90979c',
+        },
+        "data": ['老用户', '新用户', '总']
+    },
+     
+
+    "calculable": true,
+    "xAxis": [{
+        "type": "category",
+        "axisLine": {
+            lineStyle: {
+                color: '#90979c'
+            }
+        },
+        "splitLine": {
+            "show": false
+        },
+        "axisTick": {
+            "show": false
+        },
+        "splitArea": {
+            "show": false
+        },
+        "axisLabel": {
+            "interval": 0,
+
+        },
+        "data": xData,
+    }],
+    "yAxis": [{
+        "type": "value",
+        "splitLine": {
+            "show": false
+        },
+        "axisLine": {
+            lineStyle: {
+                color: '#90979c'
+            }
+        },
+        "axisTick": {
+            "show": false
+        },
+        "axisLabel": {
+            "interval": 0,
+
+        },
+        "splitArea": {
+            "show": false
+        },
+
+    }],
+    "dataZoom": [{
+        "show": true,
+        "height": 30,
+        "xAxisIndex": [
+            0
+        ],
+        bottom: 30,
+        "start": 10,
+        "end": 80,
+        handleIcon: 'path://M306.1,413c0,2.2-1.8,4-4,4h-59.8c-2.2,0-4-1.8-4-4V200.8c0-2.2,1.8-4,4-4h59.8c2.2,0,4,1.8,4,4V413z',
+        handleSize: '110%',
+        handleStyle:{
+            color:"#d3dee5",
+            
+        },
+           textStyle:{
+            color:"#fff"},
+           borderColor:"#90979c"
+        
+        
+    }, {
+        "type": "inside",
+        "show": true,
+        "height": 15,
+        "start": 1,
+        "end": 35
+    }],
+    "series": [{
+            "name": "老用户",
+            "type": "bar",
+            "stack": "总量",
+            "barMaxWidth": 35,
+            "barGap": "10%",
+            "itemStyle": {
+                "normal": {
+                    "color": "rgba(255,144,128,1)",
+                    "label": {
+                        "show": true,
+                        "textStyle": {
+                            "color": "#fff"
+                        },
+                        "position": "insideTop",
+                        formatter: function(p) {
+                            return p.value > 0 ? (p.value) : '';
+                        }
+                    }
+                }
+            },
+            "data": [
+                198.66,
+                330.81,
+                151.95,
+                160.12,
+                222.56,
+                229.05,
+                128.53,
+                250.91,
+                224.47,
+                473.99,
+                126.85,
+                260.50
+            ],
+        },
+
+        {
+            "name": "新用户",
+            "type": "bar",
+            "stack": "总量",
+            "itemStyle": {
+                "normal": {
+                    "color": "rgba(0,191,183,1)",
+                    "barBorderRadius": 0,
+                    "label": {
+                        "show": true,
+                        "position": "top",
+                        formatter: function(p) {
+                            return p.value > 0 ? (p.value) : '';
+                        }
+                    }
+                }
+            },
+            "data": [
+                82.89,
+                67.54,
+                62.07,
+                59.43,
+                67.02,
+                67.09,
+                35.66,
+                71.78,
+                81.61,
+                78.85,
+                79.12,
+                72.30
+            ]
+        }, {
+            "name": "总",
+            "type": "line",
+            "stack": "总量",
+            symbolSize:20,
+            symbol:'circle',
+            "itemStyle": {
+                "normal": {
+                    "color": "rgba(252,230,48,1)",
+                    "barBorderRadius": 0,
+                    "label": {
+                        "show": true,
+                        "position": "top",
+                        formatter: function(p) {
+                            return p.value > 0 ? (p.value) : '';
+                        }
+                    }
+                }
+            },
+            "data": [
+                281.55,
+                398.35,
+                214.02,
+                219.55,
+                289.57,
+                296.14,
+                164.18,
+                322.69,
+                306.08,
+                552.84,
+                205.97,
+                332.79
+            ]
+        },
+    ]
+}
+
+
+    $.get("api_order_info").done(function (response) {
+
+        $('#simpleTable').bootstrapTable('destroy').bootstrapTable({
+
+            search: true,
+            pagination: true,
+            pageNumber: 1,
+            pageSize: 12,
+            pageList: [10, 20, 30, 50],
+            cache: false,
+            height:610,
+            paginationPreText: "上一页",
+            paginationNextText: "下一页",
+            striped: true,
+            showRefresh: false,
+            //sortName:'CreateTime',
+            //sortOrder:'desc',
+            //showColumns:true,
+            toolbar: '#toolbar',
+            //singleSelect: true,           // 单选checkbox
+            columns: [{ checkbox: true },
+            {field: '', title: '序号', sortable: true, formatter: function (value, row, index) {return index + 1;}},
+            //{ field: 'id', title: 'id名称', sortable: true },
+            { field: 'saler', title: '业务员', sortable: true },
+            { field: 'customer', title: '客户', sortable: true },
+            { field: 'state', title: '状态', sortable: true },
+            { field: 'price', title: '金额', sortable: true },
+            { field: 'created', title: '创建时间', sortable: true },
+
+            ],
+            data: response.data,
+        //     onClickCell: function (field, value, row, element) {
+
+        //                lsedit_project(row.ItemID,row.id)
+        //     },
+
+        //     onRefresh: function (params) { 
+
+        // },
+        })
+
+
+
+
+    })
 
 </script>
 {% endblock %}

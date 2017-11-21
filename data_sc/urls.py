@@ -25,10 +25,12 @@ urlpatterns = [
     # HTML
     url(r'^$',views.home, name='home'),
     url(r'^add_order_date', views.add_order_date, name='add_order_date'),
-    url(r'^show_order', views.show_order, name='show_order'),
+    url(r'^show_order$', views.show_order, name='show_order'),
+    url(r'^show_order_2', views.show_order_2, name='show_order_2'),
 
 
     # API
+    url(r'^api_order_info', views.api_order_info, name='api_order_info'),
     url(r'^api_show_data', views.api_show_data, name='api_show_data'),
     url(r'^api_show_c_data', views.api_show_c_data, name='api_show_c_data'),
 ]

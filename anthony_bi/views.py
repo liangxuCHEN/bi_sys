@@ -56,16 +56,24 @@ def show_order(request):
 
 
 def show_order_2(request):
-    # content = {
-    #     'begin_date': request.GET.get('begin_date'),
-    #     'end_date': request.GET.get('end_date'),
-    #     'frequence': request.GET.get('frequence') or 0,
-    # }
     return render(request, 'order_demo_2.html')
 
 
+def api_order_info(request):
+    if request.GET.get('begin_date'):
+        begin_date = request.GET.get('begin_date')
+        orders = Order_info().filter(created_gte=begin_date)
+    else:
+        orders = Order_info().get_all()
+
+    orders['updated'] = orders['updated'].apply(lambda x: x.strftime('%Y-%m-%d %H:%M:%S'))
+    orders['created'] = orders['created'].apply(lambda x: x.strftime('%Y-%m-%d %H:%M:%S'))
+
+    content = orders.to_dict(orient='records')
+    return HttpResponse(json.dumps({'data': content, 'status': 0, 'message': 'OK'}),content_type='application/json')
+
+
 def api_show_data(request):
-    print(request.GET)
     if request.GET.get('begin_date'):
         begin_date = request.GET.get('begin_date')
         orders = Order_info().filter(created_gte=begin_date)

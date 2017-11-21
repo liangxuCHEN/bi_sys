@@ -5,11 +5,11 @@ import pandas as pd
 
 
 config_mssql = {
-          'host': '192.168.0.80',
+          'host': '192.168.0.10',
           'port': 1433,
-          'user': 'sa',
-          'password': '123',
-          'database': 'CRM_BAYKKEE',
+          'user': 'crm_bk',
+          'password': 'bk@123456',
+          'database': 'CRM_BAYKEE',
           'charset': 'utf8'
 }
 connection = pymssql.connect(**config_mssql)
