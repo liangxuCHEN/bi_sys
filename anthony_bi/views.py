@@ -10,6 +10,8 @@ import json
 import random
 from datetime import datetime
 # Create your views here.
+
+# 产生随机订单
 saler_name = ['Ami', 'Tom', 'Jonh']
 customer_name = ['A公司', 'B公司', 'C公司', 'x公司']
 state_list =  ['new', 'process', 'finish']
@@ -20,7 +22,7 @@ provency = ["广东", "广西", "云南", "江西", "贵州", "海南", "湖北"
 def home(request):
     return render(request, 'index.html')
 
-
+# 添加数据
 def add_order_date(request):
     timestamp = datetime.today().strftime("%Y-%m-%d %H:%M:%S") 
     order = Order_info(
@@ -46,6 +48,7 @@ def add_order_date(request):
     return HttpResponse(json.dumps({'state': 20, 'message': 'OK'}), content_type="application/json")
 
 
+# 展现数据（1）
 def show_order(request):
     content = {
         'begin_date': request.GET.get('begin_date'),
@@ -55,21 +58,50 @@ def show_order(request):
     return render(request, 'order_demo.html', content)
 
 
+# 展现数据（2）
 def show_order_2(request):
     return render(request, 'order_demo_2.html')
 
 
+# 拿取数据
 def api_order_info(request):
     if request.GET.get('begin_date'):
+    	print(request.GET)
         begin_date = request.GET.get('begin_date')
         orders = Order_info().filter(created_gte=begin_date)
     else:
         orders = Order_info().get_all()
 
+    # 按时间分类
+    new_order = orders.set_index('created')
+
     orders['updated'] = orders['updated'].apply(lambda x: x.strftime('%Y-%m-%d %H:%M:%S'))
     orders['created'] = orders['created'].apply(lambda x: x.strftime('%Y-%m-%d %H:%M:%S'))
-
-    content = orders.to_dict(orient='records')
+    # 表格数据
+    content = {
+        'table_data': orders.to_dict(orient='records')
+    }
+    
+    content['companys'] = orders['customer'].value_counts().to_dict().keys()
+    
+    # 不同客户数据分开
+    new_order = new_order['2017']
+    for company in content['companys']:
+        content[company] = ['0']*12
+        price_by_month = new_order[new_order['customer'] == company].resample('M')['price'].sum().fillna(0).to_dict()
+        #print(company, '---------')
+        for key, value in price_by_month.items():
+            #print(key)
+            content[company][key.month-1] = str(value)
+    
+    # 汇总
+    content['total_price'] = ['0'] * 12
+    tmp_by_month = new_order.resample('M')['price'].sum().fillna(0).to_dict()
+    #print('------total------')
+    for key, value in tmp_by_month.items():
+        #print(key.month, value)
+        content['total_price'][key.month-1] = str(value)
+    # print(content)
     return HttpResponse(json.dumps({'data': content, 'status': 0, 'message': 'OK'}),content_type='application/json')
 
 

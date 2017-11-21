@@ -15,8 +15,11 @@
 
 <div class="row">
     <div id='toolbar'>
-        <label style="margin-right: 10px;margin-left: 10px">开始日期: </label><input type="date" id="begin_date" name="begin_date" value="{% if begin_date %}{{ begin_date }} {% endif %}"/>
-        <label style="margin-right: 10px;margin-left: 10px">结束时间: </label><input type="date" id="end_date" name="end_date" value="{% if end_date %}{{ end_date }} {% endif %}"/>
+        <form action="{% url 'show_order_2' %}" method="get">
+            <label style="margin-right: 10px;margin-left: 10px">开始日期: </label><input type="date" id="begin_date" name="begin_date" value="{% if begin_date %}{{ begin_date }} {% endif %}"/>
+            <label style="margin-right: 10px;margin-left: 10px">结束时间: </label><input type="date" id="end_date" name="end_date" value="{% if end_date %}{{ end_date }} {% endif %}"/>
+            <button type="submit" class="btn-info">筛选</button>
+        </form>
     </div>
     <table id="simpleTable" class="table"></table>
 
@@ -25,7 +28,8 @@
 
 <div class="row">
 
-<!-- 图表 -->
+   <!-- 图表 -->
+    <div id="bar" style="height:450px;"></div>
 
 </div>
 {% endblock %}
@@ -36,30 +40,15 @@
 <script type="text/javascript">
 
     var xData = function() {
-    var data = [];
-    for (var i =1; i < 14; i++) {
-        data.push(i + "");
-    }
-    return data;
-}();
+        var data = [];
+        for (var i =1; i < 14; i++) {
+            data.push(i + "");
+        }
+        return data;
+    }();
 
 option = {
-    backgroundColor: "#344b58",
-    "title": {
-        "text": "16年1月-16年11月充值客单分析",
-        "subtext": "BY MICVS",
-        x: "4%",
-
-        textStyle: {
-            color: '#fff',
-            fontSize: '22'
-        },
-        subtextStyle: {
-            color: '#90979c',
-            fontSize: '16',
-
-        },
-    },
+    backgroundColor: '#2c343c',
     "tooltip": {
         "trigger": "axis",
         "axisPointer": {
@@ -84,7 +73,7 @@ option = {
         textStyle: {
             color: '#90979c',
         },
-        "data": ['老用户', '新用户', '总']
+        "data": []
     },
      
 
@@ -160,123 +149,107 @@ option = {
         "start": 1,
         "end": 35
     }],
-    "series": [{
-            "name": "老用户",
-            "type": "bar",
-            "stack": "总量",
-            "barMaxWidth": 35,
-            "barGap": "10%",
-            "itemStyle": {
-                "normal": {
-                    "color": "rgba(255,144,128,1)",
-                    "label": {
-                        "show": true,
-                        "textStyle": {
-                            "color": "#fff"
-                        },
-                        "position": "insideTop",
-                        formatter: function(p) {
-                            return p.value > 0 ? (p.value) : '';
-                        }
-                    }
-                }
-            },
-            "data": [
-                198.66,
-                330.81,
-                151.95,
-                160.12,
-                222.56,
-                229.05,
-                128.53,
-                250.91,
-                224.47,
-                473.99,
-                126.85,
-                260.50
-            ],
-        },
-
-        {
-            "name": "新用户",
-            "type": "bar",
-            "stack": "总量",
-            "itemStyle": {
-                "normal": {
-                    "color": "rgba(0,191,183,1)",
-                    "barBorderRadius": 0,
-                    "label": {
-                        "show": true,
-                        "position": "top",
-                        formatter: function(p) {
-                            return p.value > 0 ? (p.value) : '';
-                        }
-                    }
-                }
-            },
-            "data": [
-                82.89,
-                67.54,
-                62.07,
-                59.43,
-                67.02,
-                67.09,
-                35.66,
-                71.78,
-                81.61,
-                78.85,
-                79.12,
-                72.30
-            ]
-        }, {
-            "name": "总",
-            "type": "line",
-            "stack": "总量",
-            symbolSize:20,
-            symbol:'circle',
-            "itemStyle": {
-                "normal": {
-                    "color": "rgba(252,230,48,1)",
-                    "barBorderRadius": 0,
-                    "label": {
-                        "show": true,
-                        "position": "top",
-                        formatter: function(p) {
-                            return p.value > 0 ? (p.value) : '';
-                        }
-                    }
-                }
-            },
-            "data": [
-                281.55,
-                398.35,
-                214.02,
-                219.55,
-                289.57,
-                296.14,
-                164.18,
-                322.69,
-                306.08,
-                552.84,
-                205.97,
-                332.79
-            ]
-        },
-    ]
+    // "series": [
+    //     {
+    //         "name": "新用户",
+    //         "type": "bar",
+    //         "stack": "总量",
+    //         "itemStyle": {
+    //             "normal": {
+    //                 "color": "rgba(0,191,183,1)",
+    //                 "barBorderRadius": 0,
+    //                 "label": {
+    //                     "show": true,
+    //                     "position": "top",
+    //                     formatter: function(p) {
+    //                         return p.value > 0 ? (p.value) : '';
+    //                     }
+    //                 }
+    //             }
+    //         },
+    //         "data": []
+    //     }, 
+    // ]
 }
 
+    var myChart = echarts.init(document.getElementById('bar'));
+    myChart.setOption(option)
 
-    $.get("api_order_info").done(function (response) {
+    function gene_order_series(data) {
+        var serie = [];
+        var companys = data.companys
+            for(var i = 0; i < companys.length; i++){
+                var item = {
+                    name:companys[i],
+                    type: 'bar',
+                    stack: "总量",
+                    barMaxWidth: 60,
+                    barGap: "10%",
+                    itemStyle: {
+                        normal: {
+                            //color: "rgba(0,191,183,1)",
+                            barBorderRadius: 0,
+                            label: {
+                                show: true,
+                                position: "insideTop",
+                                textStyle: {
+                                        color: "#fff"
+                                },
+                                formatter: function(p) {
+                                    return p.value > 0 ? (p.value): '';
+                                }
+                            }
+                        }
+                    },
+                    data: data[companys[i]]
+                }
+                serie.push(item);
+            }
+
+        serie.push({
+               name: "总",
+               type: "line",
+               stack: "总量",
+               symbolSize:20,
+               symbol:'circle',
+               itemStyle: {
+                    normal: {
+                       color: "rgba(252,230,48,1)",
+                       barBorderRadius: 0,
+                       label: {
+                            "show": true,
+                            "position": "top",
+                            formatter: function(p) {
+                                return p.value > 0 ? (p.value) : '';
+                             }
+                        }
+                    }
+                },
+               data: data.total_price,
+
+        })
+        return serie;
+    }
+
+    var get_url= 'api_order_info'
+         {% if begin_date %}
+             get_url += '?begin_date={{ begin_date }}'
+             {% if end_date %}
+               get_url += '&end_date={{ end_date }}'
+             {% endif %}
+         {% endif %}
+    
+    $.get(get_url).done(function (response) {
 
         $('#simpleTable').bootstrapTable('destroy').bootstrapTable({
 
             search: true,
             pagination: true,
             pageNumber: 1,
-            pageSize: 12,
+            pageSize: 10,
             pageList: [10, 20, 30, 50],
             cache: false,
-            height:610,
+            height:450,
             paginationPreText: "上一页",
             paginationNextText: "下一页",
             striped: true,
@@ -296,7 +269,7 @@ option = {
             { field: 'created', title: '创建时间', sortable: true },
 
             ],
-            data: response.data,
+            data: response.data.table_data,
         //     onClickCell: function (field, value, row, element) {
 
         //                lsedit_project(row.ItemID,row.id)
@@ -305,9 +278,16 @@ option = {
         //     onRefresh: function (params) { 
 
         // },
-        })
+        });
 
+            // 填入数据
+            myChart.setOption({
+                legend: {
+                    data: response.data.companys
+                },
 
+                series: gene_order_series(response.data)
+            });
 
 
     })
