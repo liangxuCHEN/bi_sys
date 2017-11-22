@@ -27,7 +27,7 @@ urlpatterns = [
     url(r'^add_order_date', views.add_order_date, name='add_order_date'),
     url(r'^show_order$', views.show_order, name='show_order'),
     url(r'^show_order_2', views.show_order_2, name='show_order_2'),
-
+    url(r'^show_demo', views.show_demo, name='show_demo'),
 
     # API
     url(r'^api_order_info', views.api_order_info, name='api_order_info'),

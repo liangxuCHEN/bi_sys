@@ -1,0 +1,976 @@
+{% extends "base.html" %}
+{% block head %}
+<script src="/static/js/echarts.js" charset="utf-8"></script>
+<script type="text/javascript" src="/static/js/dataTool.min.js"></script>
+
+{% endblock %}
+
+{% block title %}Order{% endblock %}
+
+
+{% block content %}
+
+<div class="row">
+
+ <div class="col-md-3 bg-info">
+    <div id="funnel" style="height:400px;"></div>
+
+ </div>
+
+ <div class="col-md-3 bg-info">
+    <div id="treemap" style="height:400px;"></div>
+ </div>
+
+ <div class="col-md-6 bg-info">
+    <div id="graph" style="height:400px;"></div>
+ </div>
+
+
+</div>
+
+<div class="row">
+
+ <div class="col-md-6 bg-info">
+    <div id="heatmap" style="height:450px;"></div>
+
+ </div>
+
+ <div class="col-md-6 bg-info">
+    <div id="scatter" style="height:450px;"></div>
+ </div>
+
+
+</div>
+
+
+<div class="row">
+
+ <div class="col-md-3 bg-info">
+    <div id="radar" style="height:400px;"></div>
+
+ </div>
+
+ <div class="col-md-6 bg-info">
+    <div id="boxplot" style="height:400px;"></div>
+ </div>
+
+
+</div>
+
+
+{% endblock %}
+
+
+{% block script %}
+
+<script type="text/javascript">
+//chart 0
+option0 = {
+    title: {
+        left: 'center',
+        text: '漏斗图-转化率分析',
+        subtext: '纯属虚构'
+    },
+    tooltip: {
+        trigger: 'item',
+        formatter: "{a} <br/>{b} : {c}%"
+    },
+    toolbox: {
+        feature: {
+            dataView: {readOnly: false},
+            restore: {},
+            saveAsImage: {}
+        }
+    },
+    legend: {
+        left: 'left',
+        bottom: '15%',
+        orient: 'vertical',
+        data: ['咨询','报价','打样','下单','复购']
+    },
+    calculable: true,
+    series: [
+        {
+            name:'漏斗图',
+            type:'funnel',
+            left: '10%',
+            top: 60,
+            //x2: 80,
+            bottom: 60,
+            width: '80%',
+            // height: {totalHeight} - y - y2,
+            min: 0,
+            max: 100,
+            minSize: '0%',
+            maxSize: '100%',
+            sort: 'descending',
+            gap: 2,
+            label: {
+                normal: {
+                    show: true,
+                    position: 'inside'
+                },
+                emphasis: {
+                    textStyle: {
+                        fontSize: 20
+                    }
+                }
+            },
+            labelLine: {
+                normal: {
+                    length: 10,
+                    lineStyle: {
+                        width: 1,
+                        type: 'solid'
+                    }
+                }
+            },
+            itemStyle: {
+                normal: {
+                    borderColor: '#fff',
+                    borderWidth: 1
+                }
+            },
+            data: [
+                {value: 35, name: '复购'},
+                {value: 40, name: '下单'},
+                {value: 60, name: '打样'},
+                {value: 80, name: '报价'},
+                {value: 100, name: '咨询'}
+            ]
+        }
+    ]
+};
+
+var myChart0= echarts.init(document.getElementById('funnel'));
+myChart0.setOption(option0)
+
+//chart 1
+
+var myChart1= echarts.init(document.getElementById('treemap'));
+myChart1.setOption({
+    title: {
+        text: '矩形树型图-多级类目分析',
+        left: 'leafDepth'
+    },
+    tooltip: {
+         formatter: '{b}:<br />临保件数： {c}件'
+    },
+    color: ['rgb(100,200,300)'],
+    series: [{
+        name: '临保',
+        type: 'treemap',
+        visibleMin: 100,
+        data: [ // 注意，最外层是一个数组，而非从某个根节点开始。
+            {
+                value: 1000,
+                children: [{
+                        value: 400, // value字段的值，对应到面积大小。
+                        // 也可以是数组，如 [2323, 43, 55]，则数组第一项对应到面积大小。
+                        // 数组其他项可以用于额外的视觉映射，详情参见 series-treemp.levels。
+                        id: 'someid-1', // id 不是必须设置的。
+                        // 但是如果想使用 API 来改变某个节点，需要用 id 来定位。
+                        name: '超过1/3保质期', // 显示在矩形中的描述文字。
+                        children: [
+                            {   value: 150,
+                                id: 'someid-31',
+                                name: '河北物流',
+                            }, {
+                                value: 200,
+                                id: 'someid-32',
+                                name: '四川物流',
+                            }, {
+                                value: 90,
+                                id: 'someid-33',
+                                name: '杭州物流',
+                            }, {
+                                value: 30,
+                                id: 'someid-34',
+                                name: '重庆物流',
+                            },{
+                                value: 20,
+                                id: 'someid-31',
+                                name: '上海物流',
+                            }, 
+                            // ...
+                        ],
+                        label: { // 此节点特殊的 label 定义（如果需要的话）。
+                            // ...         // label的格式参见 series-treemap.label。
+                        },
+                        itemStyle: { // 此节点特殊的 itemStyle 定义（如果需要的话）。
+                            // ...         // label的格式参见 series-treemap.itemStyle。
+                        }
+                    }, {
+                        value: 300,
+                        id: 'someid-2',
+                        name: '超过1/2保质期',
+                        children: [
+                            {   value: 150,
+                                id: 'someid-31',
+                                name: '河北物流',
+                            }, {
+                                value: 200,
+                                id: 'someid-32',
+                                name: '四川物流',
+                            }, {
+                                value: 90,
+                                id: 'someid-33',
+                                name: '杭州物流',
+                            }, {
+                                value: 30,
+                                id: 'someid-34',
+                                name: '重庆物流',
+                            },{
+                                value: 20,
+                                id: 'someid-31',
+                                name: '上海物流',
+                            },
+
+                            // ...
+                        ],
+
+                    }, {
+                        value: 200,
+                        id: 'someid-3',
+                        name: '超过2/3保质期',
+                        children: [
+                            {   value: 150,
+                                id: 'someid-31',
+                                name: '河北物流',
+                            }, {
+                                value: 200,
+                                id: 'someid-32',
+                                name: '四川物流',
+                            }, {
+                                value: 90,
+                                id: 'someid-33',
+                                name: '杭州物流',
+                            }, {
+                                value: 30,
+                                id: 'someid-34',
+                                name: '重庆物流',
+                            },{
+                                value: 20,
+                                id: 'someid-31',
+                                name: '上海物流',
+                            }, 
+                            // ...
+                        ],
+
+                    }, {
+                        value: 100,
+                        id: 'someid-4',
+                        name: '完全超过保质期',
+                        children: [
+                            {   value: 150,
+                                id: 'someid-31',
+                                name: '河北物流',
+                            }, {
+                                value: 200,
+                                id: 'someid-32',
+                                name: '四川物流',
+                            }, {
+                                value: 90,
+                                id: 'someid-33',
+                                name: '杭州物流',
+                            }, {
+                                value: 30,
+                                id: 'someid-34',
+                                name: '重庆物流',
+                            },{
+                                value: 20,
+                                id: 'someid-31',
+                                name: '上海物流',
+                            }, 
+                            // ...
+                        ],
+
+                    }
+
+
+                ]
+            },
+            // {
+            //     value: [23, 59, 12]
+            //     // 如果没有children，可以不写
+            // },
+            // ...
+        ],
+        leafDepth: 2,
+        levels: [{
+            itemStyle: {
+                normal: {
+                    borderColor: '#fff',
+                    borderWidth: 10,
+                    gapWidth: 4
+                }
+            }
+        }, {
+            colorSaturation: [0.3, 0.6],
+            itemStyle: {
+                normal: {
+                    borderColorSaturation: 0.7,
+                    gapWidth: 5,
+                    borderWidth: 2
+                }
+            }
+        }, {
+            colorSaturation: [0.3, 0.5],
+            itemStyle: {
+                normal: {
+                    borderColorSaturation: 0.6,
+                    gapWidth: 1
+                }
+            }
+        }, {
+            colorSaturation: [0.3, 0.5]
+        }]
+    }]
+})
+
+//chart 2
+
+var myChart2 = echarts.init(document.getElementById('graph'));
+var data = ['文艺', '人文社科', '经管', '励志',
+    '科技', '生活'
+];
+var c = [];
+var m = [];
+var n = [];
+var l = [800, 700, 750, 850, 1000, 1200];
+var a = ["星星上的人", "心无挂碍", "解忧杂货店", "小王子", "次第花开", "老人与海", "影响力", "金字塔原理", "阿米巴经营", "断舍离", "非暴力沟通", "人性的弱点营", "时间重生", "虚空：宇宙源起何处", "无限之书：从宇宙边", "太空之眼 : 哈勃", "肌肉健美训练图解", "如果可以去流浪", "孤独星球", "最好的时光在路上"];
+var d = [280, 220, 300, 200, 240, 260, 300, 200, 250, 300, 200, 350, 300, 200, 180, 320, 320, 350, 250, 280];
+for (var i = 0; i < data.length; i++) {
+    c.push({
+        "name": data[i],
+        "value": l[i],
+        "symbolSize": 9,
+        "category": data[i],
+        "draggable": "true"
+    });
+    m.push({
+        "source": "借阅频次高的书类进行排名",
+        "target": data[i]
+    });
+    n.push({
+        'name': data[i]
+    });
+}
+for (var k = 0; k < a.length; k++) {
+    if (k < 3) {
+        c.push({
+            "name": a[k],
+            "value": d[k],
+            "symbolSize": 18,
+            "category": "文艺",
+            "draggable": "true"
+        });
+        m.push({
+            "source": "文艺",
+            "target": a[k]
+        })
+    } else if (k < 6) {
+        c.push({
+            "name": a[k],
+            "value": d[k],
+            "symbolSize": 18,
+            "category": "人文社科",
+            "draggable": "true"
+        });
+        m.push({
+            "source": "人文社科",
+            "target": a[k]
+        })
+    } else if (k < 9) {
+        c.push({
+            "name": a[k],
+            "value": d[k],
+            "symbolSize": 18,
+            "category": "经管",
+            "draggable": "true"
+        });
+        m.push({
+            "source": "经管",
+            "target": a[k]
+        })
+    } else if (k < 12) {
+        c.push({
+            "name": a[k],
+            "value": d[k],
+            "symbolSize": 18,
+            "category": "励志",
+            "draggable": "true"
+        });
+        m.push({
+            "source": "励志",
+            "target": a[k]
+        })
+    } else if (k < 16) {
+        c.push({
+            "name": a[k],
+            "value": d[k],
+            "symbolSize": 18,
+            "category": "科技",
+            "draggable": "true"
+        });
+        m.push({
+            "source": "科技",
+            "target": a[k]
+        })
+    } else if (k < 20) {
+        c.push({
+            "name": a[k],
+            "value": d[k],
+            "symbolSize": 18,
+            "category": "生活",
+            "draggable": "true"
+        });
+        m.push({
+            "source": "生活",
+            "target": a[k]
+        })
+    }
+}
+c.push({
+    "name": "借阅频次高的书类进行排名",
+    "symbolSize": 3,
+    "category": "借阅频次高的书类进行排名",
+    "draggable": "true",
+    "value": []
+});
+/*   d.push( {
+       "source": "人文学院",
+       "target": "汉语言文学(应用语言学)"
+   });*/
+option2 = {
+    backgroundColor: new echarts.graphic.RadialGradient(0.3, 0.3, 0.8, [{
+        offset: 0,
+        color: '#f7f8fa'
+    }, {
+        offset: 1,
+        color: '#cdd0d5'
+    }]),
+    title: {
+        text: "关系图-用于组织结构和关系",
+    },
+    tooltip: {},
+    legend: [{
+        formatter: function(name) {
+            return echarts.format.truncateText(name, 40, '14px Microsoft Yahei', '…');
+        },
+        tooltip: {
+            show: true
+        },
+        selectedMode: 'false',
+        bottom: 20,
+        data: ['文艺', '人文社科', '经管', '励志',
+            '科技', '生活', '音像'
+        ]
+    }],
+    toolbox: {
+        show: true,
+        feature: {
+            dataView: {
+                show: true,
+                readOnly: true
+            },
+            restore: {
+                show: true
+            },
+            saveAsImage: {
+                show: true
+            }
+        }
+    },
+    animationDuration: 3000,
+    animationEasingUpdate: 'quinticInOut',
+    series: [{
+        name: '借阅频次高的书类进行排名',
+        type: 'graph',
+        layout: 'force',
+
+        force: {
+            repulsion: 50
+        },
+        data: c,
+        links: m,
+        categories: n,
+        focusNodeAdjacency: true,
+        roam: true,
+        label: {
+            normal: {
+
+                show: true,
+                position: 'top',
+
+            }
+        },
+        lineStyle: {
+            normal: {
+                color: 'source',
+                curveness: 0,
+                type: "solid"
+            }
+        }
+    }]
+};
+
+myChart2.setOption(option2)
+
+// chart 3
+
+var hours = ['12a', '1a', '2a', '3a', '4a', '5a', '6a',
+        '7a', '8a', '9a','10a','11a',
+        '12p', '1p', '2p', '3p', '4p', '5p',
+        '6p', '7p', '8p', '9p', '10p', '11p'];
+var days = ['Saturday', 'Friday', 'Thursday',
+        'Wednesday', 'Tuesday', 'Monday', 'Sunday'];
+
+var data = [[0,0,5],[0,1,1],[0,2,0],[0,3,0],[0,4,0],[0,5,0],[0,6,0],[0,7,0],[0,8,0],[0,9,0],[0,10,0],[0,11,2],[0,12,4],[0,13,1],[0,14,1],[0,15,3],[0,16,4],[0,17,6],[0,18,4],[0,19,4],[0,20,3],[0,21,3],[0,22,2],[0,23,5],[1,0,7],[1,1,0],[1,2,0],[1,3,0],[1,4,0],[1,5,0],[1,6,0],[1,7,0],[1,8,0],[1,9,0],[1,10,5],[1,11,2],[1,12,2],[1,13,6],[1,14,9],[1,15,11],[1,16,6],[1,17,7],[1,18,8],[1,19,12],[1,20,5],[1,21,5],[1,22,7],[1,23,2],[2,0,1],[2,1,1],[2,2,0],[2,3,0],[2,4,0],[2,5,0],[2,6,0],[2,7,0],[2,8,0],[2,9,0],[2,10,3],[2,11,2],[2,12,1],[2,13,9],[2,14,8],[2,15,10],[2,16,6],[2,17,5],[2,18,5],[2,19,5],[2,20,7],[2,21,4],[2,22,2],[2,23,4],[3,0,7],[3,1,3],[3,2,0],[3,3,0],[3,4,0],[3,5,0],[3,6,0],[3,7,0],[3,8,1],[3,9,0],[3,10,5],[3,11,4],[3,12,7],[3,13,14],[3,14,13],[3,15,12],[3,16,9],[3,17,5],[3,18,5],[3,19,10],[3,20,6],[3,21,4],[3,22,4],[3,23,1],[4,0,1],[4,1,3],[4,2,0],[4,3,0],[4,4,0],[4,5,1],[4,6,0],[4,7,0],[4,8,0],[4,9,2],[4,10,4],[4,11,4],[4,12,2],[4,13,4],[4,14,4],[4,15,14],[4,16,12],[4,17,1],[4,18,8],[4,19,5],[4,20,3],[4,21,7],[4,22,3],[4,23,0],[5,0,2],[5,1,1],[5,2,0],[5,3,3],[5,4,0],[5,5,0],[5,6,0],[5,7,0],[5,8,2],[5,9,0],[5,10,4],[5,11,1],[5,12,5],[5,13,10],[5,14,5],[5,15,7],[5,16,11],[5,17,6],[5,18,0],[5,19,5],[5,20,3],[5,21,4],[5,22,2],[5,23,0],[6,0,1],[6,1,0],[6,2,0],[6,3,0],[6,4,0],[6,5,0],[6,6,0],[6,7,0],[6,8,0],[6,9,0],[6,10,1],[6,11,0],[6,12,2],[6,13,1],[6,14,3],[6,15,4],[6,16,0],[6,17,0],[6,18,0],[6,19,0],[6,20,1],[6,21,2],[6,22,2],[6,23,6]];
+
+data = data.map(function (item) {
+    return [item[1], item[0], item[2] || '-'];
+});
+
+var myChart3= echarts.init(document.getElementById('heatmap'));
+myChart3.setOption({
+    title: {
+        text: "热力图-用于日常生产记录，周期性记录",
+    },
+    tooltip: {
+        position: 'top'
+    },
+    animation: false,
+    grid: {
+        height: '50%',
+        y: '10%'
+    },
+    xAxis: {
+        type: 'category',
+        data: hours,
+        splitArea: {
+            show: true
+        }
+    },
+    yAxis: {
+        type: 'category',
+        data: days,
+        splitArea: {
+            show: true
+        }
+    },
+    dataZoom: [
+        {
+            type: 'slider',
+            show: true,
+            xAxisIndex: [0],
+            start: 1,
+            end: 100
+        },
+        {
+            type: 'slider',
+            show: true,
+            yAxisIndex: [0],
+            left: '93%',
+            start: 1,
+            end: 100
+        },
+        {
+            type: 'inside',
+            xAxisIndex: [0],
+            start: 1,
+            end: 100
+        },
+        {
+            type: 'inside',
+            yAxisIndex: [0],
+            start: 1,
+            end: 100
+        }
+    ],
+    visualMap: {
+        min: 0,
+        max: 10,
+        calculable: true,
+        left: 'left',
+        bottom: '5%'
+    },
+    series: [{
+        name: 'Punch Card',
+        type: 'heatmap',
+        data: data,
+        label: {
+            normal: {
+                show: true
+            }
+        },
+        itemStyle: {
+            emphasis: {
+                shadowBlur: 10,
+                shadowColor: 'rgba(0, 0, 0, 0.5)'
+            }
+        }
+    }]
+})
+
+//chart 4
+
+
+// Generate data.
+var data_4 = echarts.dataTool.prepareBoxplotData([
+    [850, 740, 900, 1070, 930, 850, 950, 980, 980, 880, 1000, 980, 930, 650, 760, 810, 1000, 1000, 960, 960],
+    [960, 940, 960, 940, 880, 800, 850, 880, 900, 840, 830, 790, 810, 880, 880, 830, 800, 790, 760, 800],
+    [880, 880, 880, 860, 720, 720, 620, 860, 970, 950, 880, 910, 850, 870, 840, 840, 850, 840, 840, 840],
+    [890, 810, 810, 820, 800, 770, 760, 740, 750, 760, 910, 920, 890, 860, 880, 720, 840, 850, 850, 780],
+    [890, 840, 780, 810, 760, 810, 790, 810, 820, 850, 870, 870, 810, 740, 810, 940, 950, 800, 810, 870]
+]);
+
+var myChart4= echarts.init(document.getElementById('boxplot'));
+myChart4.setOption({
+    backgroundColor: {
+        color: '#f7f8fa'
+    }, 
+    title: [
+        {
+            text: '箱线图-查看对象的变化规律',
+            left: 'center',
+        },
+        {
+            text: 'upper: Q3 + 1.5 * IRQ \nlower: Q1 - 1.5 * IRQ',
+            borderColor: '#999',
+            borderWidth: 1,
+            textStyle: {
+                fontSize: 14
+            },
+            left: '10%',
+            top: '90%'
+        }
+    ],
+    legend: {
+        data: ['line', 'line2', 'line3']
+    },
+    tooltip: {
+        trigger: 'item',
+        axisPointer: {
+            type: 'shadow'
+        }
+    },
+    grid: {
+        left: '10%',
+        right: '10%',
+        bottom: '15%'
+    },
+    xAxis: {
+        type: 'category',
+        data: data_4.axisData,
+        boundaryGap: true,
+        nameGap: 30,
+        splitArea: {
+            show: false
+        },
+        axisLabel: {
+            formatter: 'expr {value}'
+        },
+        splitLine: {
+            show: false
+        }
+    },
+    yAxis: {
+        type: 'value',
+        name: 'km/s minus 299,000',
+        splitArea: {
+            show: true
+        }
+    },
+    series: [
+        {
+            name: 'boxplot',
+            type: 'boxplot',
+            data: data_4.boxData,
+            tooltip: {
+                formatter: function (param) {
+                    return [
+                        'Experiment ' + param.name + ': ',
+                        'upper: ' + param.data_4[4],
+                        'Q3: ' + param.data_4[3],
+                        'median: ' + param.data_4[2],
+                        'Q1: ' + param.data_4[1],
+                        'lower: ' + param.data_4[0]
+                    ].join('<br/>')
+                }
+            }
+        },
+        {
+            name: 'outlier',
+            type: 'scatter',
+            data: data_4.outliers
+        }
+    ]
+})
+
+// chart 5
+
+var myChart5= echarts.init(document.getElementById('radar'));
+myChart5.setOption({
+    title: {
+        text: '雷达图-评级或性能查看'
+    },
+    tooltip: {},
+    legend: {
+        orient: 'vertical',
+        left:"right",
+        data: ['项目A', '竞品平均']
+    },
+    radar: {
+        // shape: 'circle',
+        name: {
+            textStyle: {
+                color: '#fff',
+                backgroundColor: '#999',
+                borderRadius: 3,
+                padding: [3, 5]
+           }
+        },
+        indicator: [
+           { name: '团队分', max: 6500},
+           { name: '竞争分', max: 16000},
+           { name: '成长分', max: 30000},
+           { name: '融资分', max: 38000},
+           { name: '舆论分', max: 52000},
+        ]
+    },
+    series: [{
+        name: '预算 vs 开销（Budget vs spending）',
+        type: 'radar',
+        // areaStyle: {normal: {}},
+        data : [
+            {
+                value : [4300, 10000, 28000, 35000, 50000],
+                name : '项目A'
+            },
+             {
+                value : [5000, 14000, 28000, 31000, 42000],
+                name : '竞品平均'
+            }
+        ]
+    }]
+})
+
+
+// chart 6
+
+var data_6 = [
+    [[28604,77,17096869,'Australia',1990],[31163,77.4,27662440,'Canada',1990],[1516,68,1154605773,'China',1990],[13670,74.7,10582082,'Cuba',1990],[28599,75,4986705,'Finland',1990],[29476,77.1,56943299,'France',1990],[31476,75.4,78958237,'Germany',1990],[28666,78.1,254830,'Iceland',1990],[1777,57.7,870601776,'India',1990],[29550,79.1,122249285,'Japan',1990],[2076,67.9,20194354,'North Korea',1990],[12087,72,42972254,'South Korea',1990],[24021,75.4,3397534,'New Zealand',1990],[43296,76.8,4240375,'Norway',1990],[10088,70.8,38195258,'Poland',1990],[19349,69.6,147568552,'Russia',1990],[10670,67.3,53994605,'Turkey',1990],[26424,75.7,57110117,'United Kingdom',1990],[37062,75.4,252847810,'United States',1990]],
+    [[44056,81.8,23968973,'Australia',2015],[43294,81.7,35939927,'Canada',2015],[13334,76.9,1376048943,'China',2015],[21291,78.5,11389562,'Cuba',2015],[38923,80.8,5503457,'Finland',2015],[37599,81.9,64395345,'France',2015],[44053,81.1,80688545,'Germany',2015],[42182,82.8,329425,'Iceland',2015],[5903,66.8,1311050527,'India',2015],[36162,83.5,126573481,'Japan',2015],[1390,71.4,25155317,'North Korea',2015],[34644,80.7,50293439,'South Korea',2015],[34186,80.6,4528526,'New Zealand',2015],[64304,81.6,5210967,'Norway',2015],[24787,77.3,38611794,'Poland',2015],[23038,73.13,143456918,'Russia',2015],[19360,76.5,78665830,'Turkey',2015],[38225,81.4,64715810,'United Kingdom',2015],[53354,79.1,321773631,'United States',2015]]
+];
+
+//myChart6.showLoading();
+//myChart6.hideLoading();
+
+
+// Schema:
+var schema = [
+    {name: 'Income', index: 0, text: '人均收入', unit: '美元'},
+    {name: 'LifeExpectancy', index: 1, text: '人均寿命', unit: '岁'},
+    {name: 'Population', index: 2, text: '总人口', unit: ''},
+    {name: 'Country', index: 3, text: '国家', unit: ''}
+];
+
+var sizeFunction = function (x) {
+        var y = Math.sqrt(x / 5e8) + 0.1;
+        return y * 40;
+    };
+var itemStyle = {
+        normal: {
+            opacity: 0.8,
+            shadowBlur: 10,
+            shadowOffsetX: 0,
+            shadowOffsetY: 0,
+            shadowColor: 'rgba(0, 0, 0, 0.5)'
+        }
+    };
+var myChart6= echarts.init(document.getElementById('scatter'));
+
+
+option6 = {
+  baseOption: {
+    timeline: {
+        axisType: 'category',
+        orient: 'vertical',
+        autoPlay: true,
+        inverse: true,
+        playInterval: 1000,
+        left: null,
+        right: 0,
+        top: 20,
+        bottom: 20,
+        width: 55,
+        height: null,
+        label: {
+            normal: {
+                textStyle: {
+                    color: '#999'
+                }
+            },
+            emphasis: {
+                textStyle: {
+                    color: '#fff'
+                }
+            }
+        },
+        symbol: 'none',
+        lineStyle: {
+            color: '#555'
+        },
+        checkpointStyle: {
+            color: '#bbb',
+            borderColor: '#777',
+            borderWidth: 2
+        },
+        controlStyle: {
+            showNextBtn: false,
+            showPrevBtn: false,
+            normal: {
+                color: '#666',
+                borderColor: '#666'
+            },
+            emphasis: {
+                color: '#aaa',
+                borderColor: '#aaa'
+            }
+        },
+        data: []
+    },
+    backgroundColor: '#404a59',
+
+    title: [
+    {
+        text: data_6[0][0][4],
+        textAlign: 'center',
+        left: '63%',
+        top: '55%',
+        textStyle: {
+            fontSize: 100,
+            color: 'rgba(255, 255, 255, 0.7)'
+        },
+     },
+     {
+        textStyle: {
+            color: '#999'
+        },
+        text: '散点图-展示三种变量的关系-例子：寿命，人均收入，国民生产总值',
+    }
+    ],
+    legend: {
+        right: 10,
+        data: ['1990', '2015']
+    },
+    tooltip: {
+        padding: 5,
+        backgroundColor: '#222',
+        borderColor: '#777',
+        borderWidth: 1,
+        formatter: function (param) {
+            var value = param.data;
+            return schema[3].text + '：' + value[3] + '<br>'
+                    + schema[1].text + '：' + value[1] + schema[1].unit + '<br>'
+                    + schema[0].text + '：' + value[0] + schema[0].unit + '<br>'
+                    + schema[2].text + '：' + value[2] + '<br>';
+        }
+    },
+    xAxis: {
+        type: 'log',
+        name: '人均收入',
+        max: 100000,
+        min: 300,
+        nameGap: 25,
+        nameLocation: 'middle',
+        nameTextStyle: {
+            fontSize: 18
+        },
+        splitLine: {
+            show: false
+        },
+        axisLine: {
+            lineStyle: {
+                color: '#ccc'
+            }
+        },
+        axisLabel: {
+            formatter: '{value} $'
+        }
+    },
+    yAxis: {
+        type: 'value',
+        name: '平均寿命',
+        max: 100,
+        nameTextStyle: {
+            color: '#ccc',
+            fontSize: 18
+        },
+        axisLine: {
+            lineStyle: {
+                color: '#ccc'
+            }
+        },
+        splitLine: {
+            show: false
+        },
+        axisLabel: {
+            formatter: '{value} 岁'
+        }
+    },
+    visualMap: [
+        {
+            show: false,
+            dimension: 3,
+            categories: ['Australia','Canada','China','Cuba','Finland','France','Germany','Iceland','India','Japan','North Korea','South Korea','New Zealand','Norway','Poland','Russia','Turkey','United Kingdom','United States'],
+            calculable: true,
+            precision: 0.1,
+            textGap: 30,
+            textStyle: {
+                color: '#ccc'
+            },
+            inRange: {
+                color: (function () {
+                    var colors = ['#bcd3bb', '#e88f70', '#edc1a5', '#9dc5c8', '#e1e8c8', '#7b7c68', '#e5b5b5', '#f0b489', '#928ea8', '#bda29a'];
+                    return colors.concat(colors);
+                })()
+            }
+        }
+    ],
+    series: [{
+        name:data_6[0][4],
+        type: 'scatter',
+        itemStyle: itemStyle,
+        data: data_6[0],
+        symbolSize: function(val) {
+            return sizeFunction(val[2]);
+        }
+    }]
+  },
+  options:[]
+}
+
+ for (var n = 0; n < data_6.length; n++) {
+        option6.baseOption.timeline.data.push(data_6[n][4]);
+        option6.options.push({
+            title: {
+                show: true,
+                'text': data_6[n][0][4] + ''
+            },
+            series: {
+                name:data_6[n][4],
+                type: 'scatter',
+                itemStyle: itemStyle,
+                data: data_6[n],
+                symbolSize: function(val) {
+                    return sizeFunction(val[2]);
+                }
+            }
+        });
+    }
+
+myChart6.setOption(option6)
+</script>
+{% endblock %}

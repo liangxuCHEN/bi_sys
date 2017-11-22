@@ -9,9 +9,12 @@ from anthony_bi.sql import Order_info, NewTable
 import json
 import random
 from datetime import datetime
+import time
 # Create your views here.
 
 # 产生随机订单
+START_TIME = time.mktime((2017,1,1,0,0,0,0,0,0))    #生成开始时间戳
+END_TIME = time.mktime((2017,12,31,23,59,59,0,0,0))    #生成结束时间戳
 saler_name = ['Ami', 'Tom', 'Jonh']
 customer_name = ['A公司', 'B公司', 'C公司', 'x公司']
 state_list =  ['new', 'process', 'finish']
@@ -24,7 +27,8 @@ def home(request):
 
 # 添加数据
 def add_order_date(request):
-    timestamp = datetime.today().strftime("%Y-%m-%d %H:%M:%S") 
+    timestamp=time.strftime("%Y-%m-%d %H:%M:%S",time.localtime(random.randint(START_TIME,END_TIME)))
+    print(timestamp)
     order = Order_info(
         saler=saler_name[random.randint(0,2)],
         customer=customer_name[random.randint(0,3)],
@@ -48,6 +52,11 @@ def add_order_date(request):
     return HttpResponse(json.dumps({'state': 20, 'message': 'OK'}), content_type="application/json")
 
 
+# 展现DEMO数据
+def show_demo(request):
+    return render(request, 'show_demo.html')
+
+
 # 展现数据（1）
 def show_order(request):
     content = {
@@ -60,17 +69,25 @@ def show_order(request):
 
 # 展现数据（2）
 def show_order_2(request):
-    return render(request, 'order_demo_2.html')
+    content = {
+        'begin_date': request.GET.get('begin_date'),
+        'end_date': request.GET.get('end_date'),
+    }
+    return render(request, 'order_demo_2.html', content)
 
 
 # 拿取数据
 def api_order_info(request):
-    if request.GET.get('begin_date'):
-    	print(request.GET)
-        begin_date = request.GET.get('begin_date')
-        orders = Order_info().filter(created_gte=begin_date)
+    # 时间筛选
+    if request.GET.get('begin_date') and request.GET.get('end_date'):
+        orders = Order_info().filter(created_gte=request.GET.get('begin_date'),created_lte=request.GET.get('end_date'))
     else:
-        orders = Order_info().get_all()
+        if request.GET.get('end_date'):
+            orders = Order_info().filter(created_lte=request.GET.get('end_date'))
+        elif request.GET.get('begin_date'):
+            orders = Order_info().filter(created_gte=request.GET.get('begin_date'))
+        else:
+            orders = Order_info().get_all()
 
     # 按时间分类
     new_order = orders.set_index('created')
@@ -83,7 +100,7 @@ def api_order_info(request):
     }
     
     content['companys'] = orders['customer'].value_counts().to_dict().keys()
-    
+    content['price'] = orders['price'].sum()
     # 不同客户数据分开
     new_order = new_order['2017']
     for company in content['companys']:
@@ -95,7 +112,7 @@ def api_order_info(request):
             content[company][key.month-1] = str(value)
     
     # 汇总
-    content['total_price'] = ['0'] * 12
+    content['total_price'] = ['0']*12
     tmp_by_month = new_order.resample('M')['price'].sum().fillna(0).to_dict()
     #print('------total------')
     for key, value in tmp_by_month.items():

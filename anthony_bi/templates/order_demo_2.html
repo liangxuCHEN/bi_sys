@@ -16,8 +16,8 @@
 <div class="row">
     <div id='toolbar'>
         <form action="{% url 'show_order_2' %}" method="get">
-            <label style="margin-right: 10px;margin-left: 10px">开始日期: </label><input type="date" id="begin_date" name="begin_date" value="{% if begin_date %}{{ begin_date }} {% endif %}"/>
-            <label style="margin-right: 10px;margin-left: 10px">结束时间: </label><input type="date" id="end_date" name="end_date" value="{% if end_date %}{{ end_date }} {% endif %}"/>
+            <label style="margin-right: 10px;margin-left: 10px">开始日期: </label><input type="date" id="begin_date" name="begin_date" value="{% if begin_date %}{{begin_date}}{% endif %}"/>
+            <label style="margin-right: 10px;margin-left: 10px">结束时间: </label><input type="date" id="end_date" name="end_date" value="{% if end_date %}{{end_date}}{% endif %}"/>
             <button type="submit" class="btn-info">筛选</button>
         </form>
     </div>
@@ -29,7 +29,7 @@
 <div class="row">
 
    <!-- 图表 -->
-    <div id="bar" style="height:450px;"></div>
+    <div id="bar" style="height:460px;"></div>
 
 </div>
 {% endblock %}
@@ -48,7 +48,24 @@
     }();
 
 option = {
-    backgroundColor: '#2c343c',
+    "backgroundColor": '#2c343c',
+    "title": {
+        x:'center',
+        textStyle: {
+            color: '#90979c',
+        },
+        text: "订单分析",
+    },
+    "toolbox": {
+           show : true,
+           feature : {
+               mark : {show: true},
+               dataView : {show: true, readOnly: false},
+               magicType : {show: true, type: ['line', 'bar', 'stack', 'tiled']},
+               restore : {show: true},
+               saveAsImage : {show: true}
+           }
+    },
     "tooltip": {
         "trigger": "axis",
         "axisPointer": {
@@ -205,7 +222,7 @@ option = {
                 }
                 serie.push(item);
             }
-
+        // 折线汇总
         serie.push({
                name: "总",
                type: "line",
@@ -228,6 +245,37 @@ option = {
                data: data.total_price,
 
         })
+        // pie比例汇总
+        serie.push({
+                type:'pie',
+                center:['91%','30%'],
+                radius:['5%','25%'],
+                tooltip: {
+                    trigger: 'item',
+                    formatter: "{d}%"
+                },
+                data:[{name: "1月",value : data.total_price[0]},
+                    {name: "2月",value : data.total_price[1]},
+                    {name: "3月",value : data.total_price[2]},
+                    {name: "4月",value : data.total_price[3]},
+                    {name: "5月",value : data.total_price[4]},
+                    {name: "6月",value : data.total_price[5]},
+                    {name: "7月",value : data.total_price[6]},
+                    {name: "8月",value : data.total_price[7]},
+                    {name: "9月",value : data.total_price[8]},
+                    {name: "10月",value : data.total_price[9]},
+                    {name: "11月",value : data.total_price[10]},
+                    {name: "12月",value : data.total_price[11]},
+                    ],
+                itemStyle: {
+                    emphasis: {
+                        shadowBlur: 5,
+                        shadowOffsetX: 0,
+                        shadowColor: 'rgba(0, 0, 0, 0.5)'
+                    }
+                }
+
+            })
         return serie;
     }
 
@@ -246,7 +294,7 @@ option = {
             search: true,
             pagination: true,
             pageNumber: 1,
-            pageSize: 10,
+            pageSize: 8,
             pageList: [10, 20, 30, 50],
             cache: false,
             height:450,
@@ -282,6 +330,9 @@ option = {
 
             // 填入数据
             myChart.setOption({
+                title: {
+                    subtext: '总金额：' + response.data.price
+                },
                 legend: {
                     data: response.data.companys
                 },
