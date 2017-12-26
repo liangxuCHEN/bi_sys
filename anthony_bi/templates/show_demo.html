@@ -54,7 +54,18 @@
     <div id="boxplot" style="height:400px;"></div>
  </div>
 
+ <div class="col-md-3 bg-info">
+    <div id="polar" style="height:400px;"></div>
 
+ </div>
+
+</div>
+
+
+<div class="row">
+    <div class="col-md-3 bg-info">
+        <div id="superset" style="height:600px;"></div>
+    </div>
 </div>
 
 
@@ -761,7 +772,8 @@ myChart5.setOption({
 
 var data_6 = [
     [[28604,77,17096869,'Australia',1990],[31163,77.4,27662440,'Canada',1990],[1516,68,1154605773,'China',1990],[13670,74.7,10582082,'Cuba',1990],[28599,75,4986705,'Finland',1990],[29476,77.1,56943299,'France',1990],[31476,75.4,78958237,'Germany',1990],[28666,78.1,254830,'Iceland',1990],[1777,57.7,870601776,'India',1990],[29550,79.1,122249285,'Japan',1990],[2076,67.9,20194354,'North Korea',1990],[12087,72,42972254,'South Korea',1990],[24021,75.4,3397534,'New Zealand',1990],[43296,76.8,4240375,'Norway',1990],[10088,70.8,38195258,'Poland',1990],[19349,69.6,147568552,'Russia',1990],[10670,67.3,53994605,'Turkey',1990],[26424,75.7,57110117,'United Kingdom',1990],[37062,75.4,252847810,'United States',1990]],
-    [[44056,81.8,23968973,'Australia',2015],[43294,81.7,35939927,'Canada',2015],[13334,76.9,1376048943,'China',2015],[21291,78.5,11389562,'Cuba',2015],[38923,80.8,5503457,'Finland',2015],[37599,81.9,64395345,'France',2015],[44053,81.1,80688545,'Germany',2015],[42182,82.8,329425,'Iceland',2015],[5903,66.8,1311050527,'India',2015],[36162,83.5,126573481,'Japan',2015],[1390,71.4,25155317,'North Korea',2015],[34644,80.7,50293439,'South Korea',2015],[34186,80.6,4528526,'New Zealand',2015],[64304,81.6,5210967,'Norway',2015],[24787,77.3,38611794,'Poland',2015],[23038,73.13,143456918,'Russia',2015],[19360,76.5,78665830,'Turkey',2015],[38225,81.4,64715810,'United Kingdom',2015],[53354,79.1,321773631,'United States',2015]]
+    [[44056,81.8,23968973,'Australia',2015],[43294,81.7,35939927,'Canada',2015],[13334,76.9,1376048943,'China',2015],[21291,78.5,11389562,'Cuba',2015],[38923,80.8,5503457,'Finland',2015],[37599,81.9,64395345,'France',2015],[44053,81.1,80688545,'Germany',2015],[42182,82.8,329425,'Iceland',2015],[5903,66.8,1311050527,'India',2015],[36162,83.5,126573481,'Japan',2015],[1390,71.4,25155317,'North Korea',2015],[34644,80.7,50293439,'South Korea',2015],[34186,80.6,4528526,'New Zealand',2015],[64304,81.6,5210967,'Norway',2015],[24787,77.3,38611794,'Poland',2015],[23038,73.13,143456918,'Russia',2015],[19360,76.5,78665830,'Turkey',2015],[38225,81.4,64715810,'United Kingdom',2015],[53354,79.1,321773631,'United States',2015]],
+    [[31904,78,17099199,'Australia',2017],[31193,79.4,3793440,'Canada',2017],[1519,88,1154905773,'China',2017],[13970,74.7,10513013,'Cuba',2017],[31599,75,4919705,'Finland',2017],[39479,77.1,59943399,'France',2017],[31479,78.4,71951337,'Germany',2017],[319,71.1,354130,'Iceland',2017],[1777,57.7,170901779,'India',2017],[39550,80.1,1349315,'Japan',2017],[3079,97.9,30194354,'North Korea',2017],[13017,83,4397354,'South Korea',2017],[34031,75.4,3397534,'New Zealand',2017],[43399,79.1,4340375,'Norway',2017],[1001,70.1,31195351,'Poland',2017],[19349,99.9,147591553,'Russia',2017],[10970,87.3,53994905,'Turkey',2017],[39434,75.7,57110117,'United Kingdom',2017],[37093,75.4,353147110,'United States',2017]],
 ];
 
 //myChart6.showLoading();
@@ -940,7 +952,7 @@ option6 = {
         }
     ],
     series: [{
-        name:data_6[0][4],
+        name:data_6[0][0][4],
         type: 'scatter',
         itemStyle: itemStyle,
         data: data_6[0],
@@ -953,14 +965,14 @@ option6 = {
 }
 
  for (var n = 0; n < data_6.length; n++) {
-        option6.baseOption.timeline.data.push(data_6[n][4]);
+        option6.baseOption.timeline.data.push(data_6[n][0][4]);
         option6.options.push({
             title: {
                 show: true,
                 'text': data_6[n][0][4] + ''
             },
             series: {
-                name:data_6[n][4],
+                name:data_6[n][0][4],
                 type: 'scatter',
                 itemStyle: itemStyle,
                 data: data_6[n],
@@ -972,5 +984,132 @@ option6 = {
     }
 
 myChart6.setOption(option6)
+
+
+//chart 7
+
+var weekDay = 0;
+var data = [{
+    name: '可可慕斯',
+    value: [1, 2, 5, 7, 6, 7, 1]
+}, {
+    name: '马卡龙',
+    value: [3, 4, 5, 8, 2, 9, 10]
+}, {
+    name: '布朗尼',
+    value: [2, 4, 5, 7, 3, 9, 11]
+}]
+
+
+var myChart7= echarts.init(document.getElementById('polar'));
+myChart7.setOption({
+    title: {
+        text: '极坐标系-基于循环时间数据的比较',
+        subtext: '小量循环数据',
+        textAlign: 'left'
+    },
+    tooltip: {
+        trigger: 'item',
+        padding: 10,
+        backgroundColor: '#222',
+        borderColor: '#777',
+        borderWidth: 1
+    },
+    angleAxis: {
+        type: 'category',
+        data: [{
+            value: '星期一',
+            textStyle: {
+                fontSize: 25,
+            }
+        }, '星期二', '星期三', '星期四', '星期五', '星期六', '星期日'],
+        z: 10
+    },
+    polar: {
+        center: ['50%', '50%'],
+        radius: 100,
+    },
+    radiusAxis: {},
+    series: [{
+        type: 'bar',
+        data: [
+            data["0"].value["0"],
+            data["0"].value["1"],
+            data["0"].value["2"],
+            data["0"].value["3"],
+            data["0"].value["4"],
+            data["0"].value["5"],
+            data["0"].value["6"],
+        ],
+        coordinateSystem: 'polar',
+        name: data["0"].name,
+        stack: 'a',
+        itemStyle: {
+            normal: {
+                borderWidth: 4,
+                borderColor: '#ffffff',
+            },
+            emphasis: {
+                borderWidth: 0,
+                shadowBlur: 10,
+                shadowOffsetX: 0,
+                shadowColor: 'rgba(0, 0, 0, 0.5)'
+            }
+        }
+    }, {
+        type: 'bar',
+        data: [
+            data["1"].value["0"],
+            data["1"].value["1"],
+            data["1"].value["2"],
+            data["1"].value["3"],
+            data["1"].value["4"],
+            data["1"].value["5"],
+            data["1"].value["6"],
+        ],
+        coordinateSystem: 'polar',
+        name: data["1"].name,
+        stack: 'a',
+        itemStyle: {
+            normal: {
+                borderWidth: 4,
+                borderColor: '#ffffff',
+            },
+            emphasis: {
+                borderWidth: 0,
+                shadowBlur: 10,
+                shadowOffsetX: 0,
+                shadowColor: 'rgba(0, 0, 0, 0.5)'
+            }
+        }
+    }, {
+        type: 'bar',
+        data: [
+            data["2"].value["0"],
+            data["2"].value["1"],
+            data["2"].value["2"],
+            data["2"].value["3"],
+            data["2"].value["4"],
+            data["2"].value["5"],
+            data["2"].value["6"],
+        ],
+        coordinateSystem: 'polar',
+        name: data["2"].name,
+        stack: 'a',
+        itemStyle: {
+            normal: {
+                borderWidth: 3,
+                borderColor: '#ffffff',
+            },
+            emphasis: {
+                borderWidth: 3,
+                shadowBlur: 10,
+                shadowOffsetX: 0,
+                shadowColor: 'rgba(0, 0, 0, 0.5)'
+            }
+        }
+    }, 
+    ]
+})
 </script>
 {% endblock %}

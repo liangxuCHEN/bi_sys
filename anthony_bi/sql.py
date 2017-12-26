@@ -4,15 +4,8 @@ import pymssql
 import pandas as pd
 
 
-config_mssql = {
-          'host': '192.168.0.10',
-          'port': 1433,
-          'user': 'crm_bk',
-          'password': 'bk@123456',
-          'database': 'CRM_BAYKEE',
-          'charset': 'utf8'
-}
-connection = pymssql.connect(**config_mssql)
+
+# connection = pymssql.connect(**config_mssql)
 
 
 class Field(object):
@@ -61,10 +54,18 @@ class ModelMetaclass(type):
         return type.__new__(mcs, name, bases, attrs)
 
 
-# class Model(dict, metaclass=ModelMetaclass): # python 3.x 以上
-class Model(dict):
-    __metaclass__ = ModelMetaclass
+class Model(dict, metaclass=ModelMetaclass): # python 3.x 以上
+#class Model(dict):
+    #__metaclass__ = ModelMetaclass
     def __init__(self, **kwargs):
+        self.db = {
+          'host': '192.168.0.10',
+          'port': 1433,
+          'user': 'crm_bk',
+          'password': 'bk@123456',
+          'database': 'CRM_BAYKEE',
+          'charset': 'utf8'
+        }
         super(Model, self).__init__(**kwargs)
 
     def __getattr__(self, item):
@@ -77,6 +78,21 @@ class Model(dict):
         # print('key : %s, value: %%' % key, value)
         self[key] = value
 
+    
+    def __getConnect(self):
+        """
+        得到连接信息
+        返回: conn.cursor()
+        """
+        if not self.db:
+            raise(NameError,"没有设置数据库信息")
+        self.conn = pymssql.connect(**self.db)
+        cur = self.conn.cursor()
+        if not cur:
+            raise(NameError,"连接数据库失败")
+        else:
+            return cur
+
     def save(self):
         fields = []
         args = []
@@ -87,7 +103,7 @@ class Model(dict):
         values = ''
         for i in args:
             if type(i) != type(0):
-                values += "'%s'" % i.encode('utf8')
+                values += "'%s'" % i
             else:
                 values += "%d" % i
 
@@ -96,11 +112,13 @@ class Model(dict):
         sql = 'INSERT INTO %s(%s) VALUES (%s)' % (self.__table__, ','.join(fields), values[:-1])
         print('SQL: %s' % sql)
         try:
-            with connection.cursor() as cursor:
+            with self.__getConnect() as cursor:
                 cursor.execute(sql)
 
             # 主动提交，以保存所执行的语句
-            connection.commit()
+            self.conn.commit()
+            self.conn.close()
+
         except Exception as e:
             print('save error:', e)
         # print('ARGS: %s' % str(args))
@@ -144,7 +162,10 @@ class Model(dict):
         sql = 'SELECT * From %s WHERE %s %s' % (self.__table__, ' and '.join(fields), order_by)
         print(sql)
         try:
-            return pd.read_sql(sql, con=connection)
+            cur = self.__getConnect()
+            res = pd.read_sql(sql, con=self.conn)
+            self.conn.close()
+            return res
         except Exception as e:
             print('filter error:', e)
         return None
@@ -154,7 +175,10 @@ class Model(dict):
         sql = 'SELECT * From %s ' % (self.__table__)
         print(sql)
         try:
-            return pd.read_sql(sql, con=connection)
+            cur = self.__getConnect()
+            res = pd.read_sql(sql, con=self.conn)
+            self.conn.close()
+            return res
         except Exception as e:
             print('get_all error:', e)
         return None
@@ -196,7 +220,8 @@ def save_test():
 def get_test():
     # u = LX_Test().filter(email_contains='@', order_by_desc=['id', 'name'])
     # u = LX_Test().filter(name='11xoos')
-    u = Order_info().filter(created_gte='2017-11-20')
+    u = NewTable().filter(created_gte='2017-11-20')
+    #u = NewTable().get_all()
     # U 返回D ataFate， 继续做逻辑处理，
     # 最后返回Json结构数据
     #res = u.to_json(orient='records')
@@ -208,5 +233,4 @@ def get_test():
 if __name__ == '__main__':
     # save_test()
     get_test()
-    connection.close()
 

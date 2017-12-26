@@ -317,6 +317,9 @@ option = {
             { field: 'created', title: '创建时间', sortable: true },
 
             ],
+            showExport: true,     //下载
+            exportDataType: "all",
+            exportTypes: ['excel'],
             data: response.data.table_data,
         //     onClickCell: function (field, value, row, element) {
 

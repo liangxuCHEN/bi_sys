@@ -6,7 +6,7 @@ from django.http import HttpResponse, HttpResponseRedirect, StreamingHttpRespons
 
 from anthony_bi.sql import Order_info, NewTable
 
-import json
+from json import dumps as encodeJSON
 import random
 from datetime import datetime
 import time
@@ -27,29 +27,29 @@ def home(request):
 
 # 添加数据
 def add_order_date(request):
-    timestamp=time.strftime("%Y-%m-%d %H:%M:%S",time.localtime(random.randint(START_TIME,END_TIME)))
-    print(timestamp)
-    order = Order_info(
-        saler=saler_name[random.randint(0,2)],
-        customer=customer_name[random.randint(0,3)],
-        created=timestamp,
-        updated=timestamp,
-        state=state_list[random.randint(0,2)],
-        price=random.randint(1000,5000)
-    )
-    order.save()
+    for i in range(0, 5):
+        timestamp=time.strftime("%Y-%m-%d %H:%M:%S",time.localtime(random.randint(START_TIME,END_TIME)))
+        order = Order_info(
+            saler=saler_name[random.randint(0,2)],
+            customer=customer_name[random.randint(0,3)],
+            created=timestamp,
+            updated=timestamp,
+            state=state_list[random.randint(0,2)],
+            price=random.randint(1000,5000)
+        )
+        order.save()
 
-    c_order = NewTable(
-        customer=customer_name[random.randint(0,3)],
-        created=timestamp,
-        updated=timestamp,
-        city=provency[random.randint(0,len(provency)-1)],
-        category=category_list[random.randint(0,3)],
-        price=random.randint(1000,5000),
-        qty=random.randint(100, 1000),
-    )
-    c_order.save()
-    return HttpResponse(json.dumps({'state': 20, 'message': 'OK'}), content_type="application/json")
+        c_order = NewTable(
+            customer=customer_name[random.randint(0,3)],
+            created=timestamp,
+            updated=timestamp,
+            city=provency[random.randint(0,len(provency)-1)],
+            category=category_list[random.randint(0,3)],
+            price=random.randint(1000,5000),
+            qty=random.randint(100, 1000),
+        )
+        c_order.save()
+    return HttpResponse(encodeJSON({'state': 20, 'message': 'OK'}), content_type="application/json")
 
 
 # 展现DEMO数据
@@ -98,9 +98,8 @@ def api_order_info(request):
     content = {
         'table_data': orders.to_dict(orient='records')
     }
-    
-    content['companys'] = orders['customer'].value_counts().to_dict().keys()
-    content['price'] = orders['price'].sum()
+    content['companys'] = list(orders['customer'].value_counts().to_dict().keys())
+    content['price'] = sum(orders['price'])
     # 不同客户数据分开
     new_order = new_order['2017']
     for company in content['companys']:
@@ -109,7 +108,7 @@ def api_order_info(request):
         #print(company, '---------')
         for key, value in price_by_month.items():
             #print(key)
-            content[company][key.month-1] = str(value)
+            content[company][key.month-1] = value
     
     # 汇总
     content['total_price'] = ['0']*12
@@ -117,9 +116,9 @@ def api_order_info(request):
     #print('------total------')
     for key, value in tmp_by_month.items():
         #print(key.month, value)
-        content['total_price'][key.month-1] = str(value)
-    # print(content)
-    return HttpResponse(json.dumps({'data': content, 'status': 0, 'message': 'OK'}),content_type='application/json')
+        content['total_price'][key.month-1] = value
+
+    return HttpResponse(encodeJSON({'data': content, 'status': 0, 'message': 'OK'}),content_type='application/json')
 
 
 def api_show_data(request):
@@ -135,8 +134,8 @@ def api_show_data(request):
     cg = orders.groupby('customer')
     res = cg['price'].sum().to_dict()
     content = {
-        'companys': res.keys(),
-        'total_price': res.values(),
+        'companys': list(res.keys()),
+        'total_price': list(res.values()),
         'total': sum(res.values()),
     }
 
@@ -146,13 +145,13 @@ def api_show_data(request):
     content['total_order'] = sum(res.values())
 
     # 状态
-    states = orders['state'].value_counts().to_dict().keys()
+    states = list(orders['state'].value_counts().to_dict().keys())
     content['orders_by_states'] = list()
     for company in content['companys']:
         tmp_dict = orders[orders['customer'] == company]['state'].value_counts().to_dict()
         content['orders_by_states'] += [{'name': k, 'value': v} for k, v in tmp_dict.items()]
-
-    return HttpResponse(json.dumps({'data': content, 'status': 0, 'message': 'OK'}),content_type='application/json')
+    # print(content)
+    return HttpResponse(encodeJSON({'data': content, 'status': 0, 'message': 'OK'}),content_type='application/json')
 
 
 def api_show_c_data(request):
@@ -164,13 +163,13 @@ def api_show_c_data(request):
     res = cg['price'].sum().to_dict()
 
     content = {
-        'category': res.keys(),
+        'category': list(res.keys()),
         'price': [{'name':k, 'value': v} for k, v in res.items()],
         'total_price': sum(res.values()),
     }
 
     res = cg['qty'].sum().to_dict()
-    content['qty'] = res.values()
+    content['qty'] = list(res.values())
     content['total_num'] = sum(res.values())
 
     # 城市
@@ -182,5 +181,4 @@ def api_show_c_data(request):
     for key, value in res.items():
         content[key[0]].append({'name': key[1], 'value': value})
 
-
-    return HttpResponse(json.dumps({'data': content, 'status': 0, 'message': 'OK'}),content_type='application/json')
+    return HttpResponse(encodeJSON({'data': content, 'status': 0, 'message': 'OK'}),content_type='application/json')
