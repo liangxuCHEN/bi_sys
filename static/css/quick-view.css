@@ -1,0 +1,448 @@
+/* begin: category common */
+.quickView {
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+.quickView .gallery  {
+    position: relative;
+    overflow: hidden;
+}
+.quickView .gallery .preview {
+    float: left;
+    display: block;
+    position: relative;
+}
+.quickView .gallery .preview img {
+    display: block;
+}
+.quickView .gallery ul.thumbs {
+    float: left;
+    background: #fff;
+    margin: 0;
+    list-style: none;
+    padding: 0 0 0 1px;
+}
+.quickView .gallery ul.thumbs li {
+    margin: 0;
+    padding: 1px 0 0 0;
+    cursor: pointer;
+}
+.quickView .gallery ul.thumbs li.empty {
+    cursor: default;
+}
+.quickView .gallery ul.thumbs li.empty .thumb {
+    background: #eee;
+}
+.quickView .gallery ul.thumbs li .thumb {
+    background-color: #fff;
+    display: block;
+    width: 50px;
+    height: 50px;
+}
+.quickView .gallery ul.thumbs li .thumb img {
+    cursor: pointer;
+    transition: all 0.1s;
+    -moz-transition: all 0.1s;
+    -webkit-transition: all 0.1s;
+    -ms-transition: all 0.1s;
+    -o-transition: all 0.1s;
+}
+.quickView .gallery ul.thumbs li:first-child {
+    padding-top: 0 !important;
+}
+.quickView.bottomPosition .gallery .preview {
+    float: none;
+}
+.quickView.bottomPosition .gallery ul.thumbs {
+    float: none;
+    padding: 1px 0 0 0;
+}
+.quickView.bottomPosition .gallery ul.thumbs li {
+    float: left;
+    padding: 0 0 0 1px;
+}
+.quickView.bottomPosition .gallery ul.thumbs li:first-child {
+    padding: 0  !important;
+}
+.quickView .info {
+    padding: 20px;
+    font-size: 14px;
+    position: relative;
+}
+.quickView .info .name a {
+    color: #000;
+    text-decoration: none;
+}
+.quickView .info .name a:hover {
+    color: #0063DC;
+    text-decoration: none;
+}
+.quickView .info .count {
+    color: #767676;
+}
+.quickView .info .brand {
+    color: #7f7f7f;
+}
+.quickView .info .place {
+    color: #707070;
+}
+.quickView .info .price {
+    font-weight: bold;
+}
+.quickView .info .length {
+    color: #7f7f7f;
+}
+.quickView .info .rating {
+    width: 77px;
+    height: 14px;
+    position: relative;
+    background: url("../images/rating.png") repeat-x #cdcdcd;
+    margin-bottom: 3px;
+}
+.quickView .info .rating .value {
+    height: 14px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: url("../images/rating.png") repeat-x #0183db;
+}
+.quickView.hiddenThumbs .gallery ul.thumbs {
+    position: absolute;
+    top: 0;
+    right: -51px;
+    transition: all 0.2s;
+    -moz-transition: all 0.2s;
+    -webkit-transition: all 0.2s;
+    -ms-transition: all 0.2s;
+    -o-transition: all 0.2s;
+}
+.quickView.hiddenThumbs .gallery:hover ul.thumbs {
+    right: 0 !important;
+}
+.quickView.hiddenThumbs.bottomPosition .gallery ul.thumbs {
+    top: auto;
+    right: auto;
+    bottom: -51px;
+    left: 0;
+}
+.quickView.hiddenThumbs.bottomPosition .gallery:hover ul.thumbs {
+    right: auto !important;
+    bottom: 0 !important;
+}
+.quickView ul.stats {
+    border-top: 1px solid #e5e5e5;
+    list-style: none;
+    padding: 13px 0 0 0;
+    margin: 0;
+}
+.quickView ul.stats li {
+    float: left;
+    padding: 0 10px;
+    margin: 0;
+    border-left: 1px solid #e5e5e5;
+    text-align: center;
+    color: #4877c3;
+    font-size: 12px;
+}
+.quickView ul.stats li:first-child {
+    border-left: 0;
+}
+.quickView ul.stats li .count {
+    color: #000;
+    font-size: 18px;
+    display: block;
+    font-weight: 600;
+}
+.quickView ul.stats li a {
+    color: #4877c3;
+    text-decoration: none;
+    display: block;
+    width: 50px;
+}
+
+/* end: category common */
+
+/* begin: quickNav */
+.quickView ul.quickNav {
+    list-style: none;
+    margin: 0;
+    padding: 3px;
+    background: #7f7f7f;
+    background: rgba(0,0,0,0.4);
+    border-radius: 3px;
+    position: absolute;
+    bottom: 20px;
+    left: 0;
+}
+.quickView ul.quickNav li {
+    float: left;
+    margin: 0;
+    padding: 0 0 0 3px;
+    cursor: pointer;
+}
+.quickView ul.quickNav li:first-child {
+    padding: 0;
+}
+.quickView ul.quickNav li .thumb {
+    display: block;
+    width: 18px;
+    height: 7px;
+    background-color: #fff;
+}
+.quickView ul.quickNav li .thumb img {
+    display: none;
+}
+.quickView ul.quickNav li.active .thumb {
+    background-color: #00ccff;
+}
+/* end: quickNav */
+
+/* begin: project category */
+.quickView.project .padding {
+    padding: 1px;
+}
+.quickView.project .preview img {
+    width: 254px;
+    height: 254px;
+}
+.quickView.project .gallery ul.thumbs li .thumb img {
+    opacity: 0.6;
+    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=60)";
+    filter:alpha(opacity=60);
+}
+.quickView.project.play .gallery ul.thumbs li.active .thumb img,
+.quickView.project .gallery ul.thumbs li:hover .thumb img {
+    opacity: 1;
+    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=100)";
+    filter:alpha(opacity=100);
+}
+
+/* end: project category */
+
+/* begin: product category */
+.quickView.product .gallery {
+    border-bottom: 1px solid #e5e5e5;
+}
+.quickView.product .preview img {
+    width: 203px;
+    height: 203px;
+}
+.quickView.product .gallery ul.thumbs {
+    background: #e5e5e5;
+}
+
+.quickView.product .gallery ul.thumbs li .thumb img {
+    opacity: 0.6;
+    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=60)";
+    filter:alpha(opacity=60);
+}
+
+.quickView.product.play .gallery ul.thumbs li.active .thumb img,
+.quickView.product .gallery ul.thumbs li:hover .thumb img {
+    opacity: 1;
+    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=100)";
+    filter:alpha(opacity=100);
+}
+.quickView.product.hiddenThumbs .gallery {
+    padding: 0 30px;
+}
+.quickView.product.hiddenThumbs.bottomPosition .gallery {
+    padding: 0;
+}
+.quickView.product .gallery ul.quickNav {
+    display: none;
+    background: #fff;
+    bottom: 6px;
+}
+.quickView.product .gallery:hover ul.quickNav {
+    display: block;
+}
+.quickView.product .gallery ul.quickNav  li .thumb {
+    background: #7f7f7f;
+    background: rgba(0,0,0,0.2);
+}
+.quickView.product .gallery ul.quickNav li.active .thumb {
+    background: #000;
+    background: rgba(0,0,0,0.6);
+}
+/* end: product category */
+
+/* begin: place category */
+.quickView.place .padding {
+    padding: 10px;
+}
+.quickView.place .preview img {
+    width: 400px;
+    height: 258px;
+}
+.quickView.place.bottomPosition .preview img {
+    width: 393px;
+    height: 253px;
+}
+.quickView.place .gallery ul.thumbs {
+    padding-left: 2px;
+}
+.quickView.place.bottomPosition .gallery ul.thumbs {
+    padding: 2px 0 0 0;
+}
+.quickView.place .gallery ul.thumbs li  {
+    padding-top: 2px;
+}
+.quickView.place.bottomPosition .gallery ul.thumbs li  {
+    padding: 0 0 0 2px;
+}
+.quickView.place .gallery ul.thumbs li .thumb {
+    width: 77px;
+    height: 50px;
+}
+
+.quickView.place.play .gallery ul.thumbs li.active .thumb img,
+.quickView.place .gallery ul.thumbs li:hover .thumb img {
+    opacity: 0.6;
+    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=60)";
+    filter:alpha(opacity=60);
+}
+.quickView.place.hiddenThumbs .gallery ul.thumbs {
+    right: -79px;
+}
+.quickView.place.hiddenThumbs.bottomPosition .gallery ul.thumbs {
+    bottom: -52px;
+}
+.quickView.place .info .name {
+    font-size: 18px;
+    font-weight: 700;
+}
+.quickView.place .info .price {
+    position: absolute;
+    top: 20px;
+    right: 15px;
+    text-align: right;
+}
+.quickView.place.hiddenThumbs .info .price {
+    right: 10px;
+}
+.quickView.place .info .price .value {
+    display: block;
+    color: #0072fe;
+    font-size: 36px;
+    font-weight: 700;
+    line-height: 1em;
+}
+.quickView.place .info .price .currency {
+    font-size: 20px;
+    vertical-align: top;
+    position: relative;
+    top: -5px;
+    font-weight: 600;
+}
+.quickView.place .info .price .period {
+    display: block;
+    color: #666666;
+    font-weight: normal;
+    font-size: 12px;
+}
+/* end: place category */
+
+
+/* begin: member category */
+.quickView.member .padding {
+    padding: 25px;
+}
+.quickView.member .preview img {
+    width: 179px;
+    height: 179px;
+}
+.quickView.member .gallery ul.thumbs li .thumb {
+    width: 35px;
+    height: 35px;
+}
+.quickView.member.play .gallery ul.thumbs li.active .thumb img,
+.quickView.member .gallery ul.thumbs li:hover .thumb img {
+    opacity: 0.6;
+    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=60)";
+    filter:alpha(opacity=60);
+}
+.quickView.member.hiddenThumbs .gallery ul.thumbs {
+    right: -36px;
+}
+.quickView.member .info {
+    padding-left: 0;
+}
+.quickView.member .info .name {
+    font-weight: 700;
+}
+.quickView.member .info .age {
+    font-weight: normal;
+}
+.quickView.member .info .age.female {
+    color: #ff0066;
+
+}
+.quickView.member .info .age.male {
+    color: #0072fe;
+
+}
+/* end: member category */
+
+
+/* begin: video category */
+.quickView.video .padding {
+    padding: 8px;
+}
+.quickView.video .preview img {
+    width: 309px;
+    height: 185px;
+}
+.quickView.video.bottomPosition .preview img {
+    width: 305px;
+    height: 182px;
+}
+.quickView.video .preview {
+    position: relative;
+}
+.quickView.video .gallery ul.thumbs {
+    padding-left: 8px;
+}
+.quickView.video.bottomPosition .gallery ul.thumbs {
+    padding: 1px 0 0 0;
+}
+.quickView.video .gallery ul.thumbs li .thumb {
+    width: 50px;
+    height: 30px;
+}
+
+.quickView.video.play .gallery ul.thumbs li.active .thumb img,
+.quickView.video .gallery ul.thumbs li:hover .thumb img {
+    opacity: 0.6;
+    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=60)";
+    filter:alpha(opacity=60);
+}
+.quickView.video.hiddenThumbs .gallery ul.thumbs {
+    right: -58px;
+}
+.quickView.video.hiddenThumbs.bottomPosition .gallery ul.thumbs {
+    bottom: -31px;
+}
+.quickView.video .info .name {
+    font-weight: 700;
+}
+/* end: video category */
+
+/* begin: clearfix */
+.quickView.bottomPosition ul.thumbs,
+ul.stats,
+.gallery {
+	zoom: 1;
+	display: block;
+}
+.quickView.bottomPosition ul.thumbs:after,
+ul.stats:after,
+.gallery:after {
+    clear: both;
+    content: ".";
+    display: block;
+    height: 0;
+    line-height: 0;
+    visibility: hidden;
+}
+/* end: clearfix */
