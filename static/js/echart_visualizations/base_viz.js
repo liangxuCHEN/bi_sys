@@ -122,15 +122,25 @@ function add_slice(position, url, slice_name, slice_width_unit) {
 
         console.log(response)
         
-        $(dashboard_content_id).append('<div style="position: absolute;width:'+
-            slice_width+'px;height:'+
-            slice_height+'px;left:'+
-            slice_left+'px;top:'+
-            slice_top+'px;"><div id="'+
-            slice_id +'" style="height:'+
-            (slice_height-2)+'px;width:'+
-            (slice_width-2)+'px;"></div></div>'
-        )
+        //全屏定位
+        //移动端定位-每个图一栏
+        if (document.documentElement.clientWidth > 600) {
+            $(dashboard_content_id).append('<div style="position: absolute;width:'+
+                slice_width+'px;height:'+
+                slice_height+'px;left:'+
+                slice_left+'px;top:'+
+                slice_top+'px;"><div id="'+
+                slice_id +'" style="height:'+
+                (slice_height-2)+'px;width:'+
+                (slice_width-2)+'px;"></div></div>'
+            )
+        } else {
+            $(dashboard_content_id).append('<div class="row" style="margin: 1px 5px 1px 5px"><div id="'+
+                slice_id +'" style="height:'+
+                (slice_height-2)+'px;"></div></div>'
+            )
+        }
+        
         console.log(response.form_data.viz_type)
 
         switch(response.form_data.viz_type){
@@ -143,15 +153,20 @@ function add_slice(position, url, slice_name, slice_width_unit) {
             //做表
             case 'table':
               $('#'+slice_id).append('<table id="'+
-                slice_id +'Table" class="table" style="height:'+
-                (slice_height-3)+'px;width:'+
-                (slice_width-3)+'px;"></table>')
+                slice_id +'Table" class="table"></table>')
               $('#'+slice_id+'Table').bootstrapTable('destroy').bootstrapTable(generate_table(response,　slice_name))
               $('#'+slice_id+'Table').bootstrapTable('hideLoading')
               break
 
+            //标记和分割，不用请求数据，直接显示数据,暂时支持html
+            case 'separator': case 'markup':
+               $('#'+slice_id).append(response.data.html)
+               break
+
             //画图
             default:
+              // 高度留一点空隙
+              $('#'+slice_id).css("margin-top", "5px")
               var myChart= echarts.init(document.getElementById(slice_id), chart_style)
               generate_chart(myChart, response,　slice_name)
         }
@@ -164,7 +179,8 @@ function add_slice(position, url, slice_name, slice_width_unit) {
             slice_top+'px;"><div id="'+
             slice_id +'" style="height:'+
             (slice_height-2)+'px;width:'+
-            (slice_width-2)+'px;"><div class="alert alert-warning" role="alert">数据加载失败</div></div></div>'
+            (slice_width-2)+'px;"><div style="margin: 1px 5px 1px 5px" class="alert alert-warning" role="alert">'+
+            '数据加载失败</div></div></div>'
         )
     })
 
@@ -200,7 +216,7 @@ function generate_table(response,　slice_name) {
         datas.forEach(function(val, index, arr){
             fields.push({
                 field: val,
-                title: verbose_map[response.form_data.datasource][val], //别名转化
+                title: verbose_map[response.form_data.datasource][val]  || val, //别名转化
                 sortable: true
             })
         })
@@ -405,7 +421,7 @@ function dist_bar_viz(data, table_id) {
            }
         })
         values.push(tmp_values)
-        legend.push(verbose_map[table_id][val.key])     
+        legend.push(verbose_map[table_id][val.key] || val.key)     
     })
 
     option = {
