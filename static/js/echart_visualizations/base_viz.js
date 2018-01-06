@@ -266,6 +266,9 @@ function generate_chart(mychart, data, slice_name) {
         case 'line':
           option = time_line_viz(data.data)
           break;
+        case 'bar':
+          option = time_line_viz(data.data)
+          break;
         case 'area':
           option = time_line_viz(data.data, boundaryGap=false)
           break;
@@ -358,7 +361,11 @@ function generate_chart(mychart, data, slice_name) {
             type: ['line', 'bar', 'stack', 'tiled']
           }
           break;
-
+        case 'bar':
+          option.toolbox.feature.magicType = {
+            type: ['line', 'bar', 'stack', 'tiled']
+          }
+          break;
         case 'line': 
           option.toolbox.feature.magicType = {
             type: ['line', 'bar', 'stack', 'tiled']
@@ -1131,10 +1138,14 @@ function sunburst(data, fd) {
    
    var num_circle = fd.groupby.length
 
+   //TODO: metric and second_metric 不一样的时候，要另外处理
+
+   if ((fd.metric !== fd.secondary_metric) && (fd.secondary_metric !== undefined)){
+        num_circle -= 2    
+   }
    for(var i=0; i<num_circle; i++) {
         values.push({})
     }
-
 
    data.forEach(function(val,index, arr){
 
