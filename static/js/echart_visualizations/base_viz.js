@@ -610,9 +610,16 @@ function big_number_viz(data){
        xAxis_values.push(numberToDatetime(val[0]))
     })
 
-    var compare_value = (values[values.length-1] - values[values.length-1-data.compare_lag]) /values[values.length-1] * 100
+    var compare_value
+
+    if (values[values.length-1] == 0 || values[values.length-1-data.compare_lag] == undefined){
+        compare_value = 0
+    } else {
+        compare_value = (values[values.length-1] - values[values.length-1-data.compare_lag]) /values[values.length-1] * 100
+    }
 
     var sub_text_color
+
     if (compare_value < 0) {
       sub_text_color = 'yellow'   
     } else {
