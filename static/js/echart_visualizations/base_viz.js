@@ -266,6 +266,9 @@ function generate_chart(mychart, data, slice_name) {
         case 'line':
           option = time_line_viz(data.data)
           break;
+        case 'area':
+          option = time_line_viz(data.data, boundaryGap=false)
+          break;
         case 'pie':
           option = pie_viz(data.data)
           break;
@@ -275,9 +278,56 @@ function generate_chart(mychart, data, slice_name) {
         case 'big_number':
           option = big_number_viz(data.data)
           break;
+        case 'big_number_total':
+          option = big_number_total(data.data)
+          break;
+        case 'word_cloud':
+           option = word_cloud(data.data)
+           break;        
+        case 'treemap':
+           option = treemap(data.data, data.form_data.datasource)
+           break;
+        case 'box_plot':
+           option = box_plot(data.data)
+           break;
+        case 'bubble':
+           option = bubble(data.data, data.form_data)
+           break;
+        case 'cal_heatmap':
+           option = cal_heatmap(data.data)
+           break;
+        case 'histogram':
+           option = histogram(data.data)
+           break;
+        case 'sunburst':
+           option = sunburst(data.data, data.form_data)
+           break;
+        case 'sankey':
+           option = sankey(data.data)
+           break;
+        case 'directed_force':
+           option = directed_force(data.data)
+           break;
+        case 'chord':
+           option = chord(data.data)
+           break;
+        case 'para':
+           option = parallel(data.data, data.form_data)
+           break;
+        case 'heatmap':
+           option = heatmap(data.data, data.form_data)
+           break;
         default:
           //option = china_map(data.data)
-          option = {}
+          option = {
+            title:{
+                //标题
+                text: slice_name,
+                textAlign: 'left',
+                subtext: '暂时不支持这种类型图表:' + data.form_data.viz_type
+
+            }
+          }
           console.log('pass')
     }
 
@@ -309,12 +359,17 @@ function generate_chart(mychart, data, slice_name) {
           }
           break;
 
-        case 'line':
+        case 'line': 
           option.toolbox.feature.magicType = {
             type: ['line', 'bar', 'stack', 'tiled']
           }
           option.dataZoom = {show:true}
           break;
+
+        case 'area': 
+          option.dataZoom = {show:true}
+          break;
+
         case 'pie':
           // option = pie_viz(df)
           console.log('pass')
@@ -330,6 +385,14 @@ function generate_chart(mychart, data, slice_name) {
             textAlign: 'left',
            })
           break;
+        
+        case 'box_plot':
+          option.dataZoom = {show:true}
+          break;
+        case 'bubble':
+            option.toolbox.feature.dataZoom = {}
+            break;
+
         default:
            console.log('pass')
     }
@@ -341,23 +404,38 @@ function generate_chart(mychart, data, slice_name) {
 //每个图形独立出来数据
 
 //非时间序列的柱状图数据
-function gene_bar_series(data, legend, type='bar') {
+function gene_bar_series(data, legend, type='bar', boundaryGap=true) {
         var serie = [];
+        var areaStyle
+        var stack
+        if (type=='line' && !boundaryGap) {
+            areaStyle={normal:{}}
+            stack = '总量'
+        } else {
+            areaStyle={}
+            stack = undefined
+        }
         data.forEach(function(val,index,arr){
             var item = {
                 name:legend[index],
                 type: type,
                 barMaxWidth: 60,
                 barGap: "10%",
+                areaStyle:areaStyle,
+                stack:stack,
                 data: val,
-                // label: {
-                //     normal: {
-                //         show: true,
-                //         position: 'top',
-                //         formatter: function(d) {return d.value;}
-                //         }
-                //     }
             }
+
+            //叠加状态 最后一个显示总数
+            if (index == data.length -1 && stack !== undefined) {
+                item.label = {
+                    normal: {
+                        show: true,
+                        position: 'top'
+                    }
+                }
+            }
+
             serie.push(item);
         })
         return serie
@@ -459,7 +537,7 @@ function dist_bar_viz(data, table_id) {
 
 //时间-折线
 //柱状图
-function time_line_viz(data) {
+function time_line_viz(data, boundaryGap=true) {
     var option = {}
     var values = []
     var legend = []
@@ -484,6 +562,10 @@ function time_line_viz(data) {
             top: 24,
             data: legend,
         },
+        grid: {
+            height: '70%',
+            y: '20%'
+        },
         tooltip : {
             left:'95%',
             trigger: 'axis',
@@ -494,15 +576,17 @@ function time_line_viz(data) {
         xAxis : [
             {
                 type : 'category',
+                boundaryGap: boundaryGap,
                 data : xAxis_values
             }
         ],
         yAxis : [
-            {
-                type : 'value'
+            {   
+                type : 'value',
+                min: 'dataMin',
             }
         ],
-        series : gene_bar_series(values, legend, type='line')
+        series : gene_bar_series(values, legend, type='line', boundaryGap=boundaryGap)
     }
 
     return option
@@ -576,10 +660,35 @@ function big_number_viz(data){
     return option
 }
 
+//大数字
+function big_number_total(data){
 
+    option = {
+        title: [
+           {
+                z:5,
+                text: data.data[0],
+                subtext: data.subheader,
+                left:'center',
+                top:'35%',
+                textStyle:{
+                    fontSize:60,
+                    align:'center',
+                },
+                subtextStyle:{
+                    fontSize:20,
+                    align:'center',
+                    color:'yellow',
+                }
+                
+        }],
+
+    }
+
+    return option
+}
 
 //地图
-
 function china_map(data) {
 
     var option = {}
@@ -606,7 +715,10 @@ function china_map(data) {
             left: 'left',
             top: 'bottom',
             text: ['高','低'],           // 文本，默认为数值文本
-            calculable: true
+            calculable: true,
+            textStyle:{
+                color: '#FFF',
+            }
         },
 
         series: [
@@ -628,9 +740,876 @@ function china_map(data) {
 }
 
 
+//词云
+function word_cloud(data) {
+    // 数据适配echart格式
+    var option = {}
+    var values = []
+    //var legend = []
+    data.forEach(function(val,index, arr){
+       values.push({
+            'value':val.size,
+            'name': val.text
+       })
+       //legend.push(val.text)        
+    })
+    option = {
+        tooltip : {},
+        legend: {show: false},
+        series: {
+            type: 'wordCloud',
+            gridSize: 15,
+            sizeRange: [12, 60],
+            rotationRange: [-45, 45],
+            shape: 'circle',
+            data: values,
+            textStyle: {
+                // TODO: 挑选适合dark主题的色系
+                // normal: {
+                //     color: function() {
+                //         return 'rgb(' + [
+                //             Math.round(Math.random() * 160),
+                //             Math.round(Math.random() * 160),
+                //             Math.round(Math.random() * 160)
+                //         ].join(',') + ')';
+                //     }
+                // },
+                emphasis: {
+                    shadowBlur: 10,
+                    shadowColor: '#333'
+                }
+            },
+        }
+    }
+    return option
+}
+
+
+//求队列里面的和
+function calcule_treemap_total(parent, child_data) {
+    if (child_data[0].children !== undefined) {
+        for (var i=0; i<child_data.length; i++){
+            child_data[i] = calcule_treemap_total(child_data[i], child_data[i].children)
+        }
+    } 
+    
+    var sum = 0  
+    child_data.forEach(function(val, index, arr){
+        sum += val.value
+        val.name = parent.name + '.' + val.name 
+    })
+    parent.value = sum
+    return parent
+
+}
+
+
+//树状图
+function treemap(data, table_id) {
+
+    series_name = data[0]['name']
+    data[0]['name'] = verbose_map[table_id][series_name] || series_name
+    data[0] = calcule_treemap_total(data[0], data[0].children)
+    
+    console.log('trese', data[0])
+
+    option = {
+        tooltip : {},
+        legend: {show: false},
+        
+        series: {
+            name: verbose_map[table_id][series_name] || series_name,
+            type: 'treemap',
+            visibleMin: 100,
+            data: data[0].children,
+            leafDepth: 2,
+            levels: [
+                {
+                    itemStyle: {
+                        normal: {
+                            borderColor: '#555',
+                            borderWidth: 4,
+                            gapWidth: 4
+                        }
+                    }
+                },
+                {
+                    colorSaturation: [0.3, 0.6],
+                    itemStyle: {
+                        normal: {
+                            borderColorSaturation: 0.7,
+                            gapWidth: 3,
+                            borderWidth: 3
+                        }
+                    }
+                },
+                {
+                    colorSaturation: [0.3, 0.5],
+                    itemStyle: {
+                        normal: {
+                            borderColorSaturation: 0.6,
+                            gapWidth: 1
+                        }
+                    }
+                },
+                {
+                    colorSaturation: [0.3, 0.5]
+                }
+            ]
+        },
+        
+    }
+    return option
+}
+
+
+//箱线图
+function box_plot(data) {
+    
+    function formatter(param) {
+        return [
+            '项目 ' + param.name + ': ',
+            '最大值: ' + param.data[0],
+            'Q1: ' + param.data[1],
+            '中位数: ' + param.data[2],
+            'Q3: ' + param.data[3],
+            '最小值: ' + param.data[4]
+            ].join('<br/>')
+        }
+
+    var option = {}
+    var xAxis_values = []
+    var values = []
+    var outliers = []
+    data.forEach(function(val,index, arr){
+        xAxis_values.push(val.label)
+        values.push([val.values.whisker_low, val.values.Q1, val.values.Q2, val.values.Q3, val.values.whisker_high])
+        for (var i=0; i<val.values.outliers.length; i++){
+            outliers.push([index, val.values.outliers[i]])
+        }
+    })
+
+    option = {
+        tooltip : {
+            trigger: 'item',
+            axisPointer : {            // 坐标轴指示器，坐标轴触发有效
+                type : 'shadow'        // 默认为直线，可选为：'line' | 'shadow'
+            }
+        },
+        xAxis : [
+            {
+                type : 'category',
+                data : xAxis_values,
+                splitArea: {show: false},
+                axisLabel: {formatter: '{value}'},
+                splitLine: {show: false}
+            }
+        ],
+        yAxis : [
+            {
+                type : 'value',
+                name : '-',
+                splitArea: {
+                    show: false
+                }
+            }
+        ],
+        series : [{
+            name: '-',
+            type: 'boxplot',
+            data: values,
+            tooltip: {formatter: formatter}
+        },{
+            name: '异常点',
+            type: 'pictorialBar',
+            symbolPosition: 'end',
+            symbolSize: 8,
+            barGap: '10%',
+            data: outliers
+        }
+        ]
+    }
+    return option
+
+}
+
+//时间热力图
+function cal_heatmap(data) {
+
+    var option
+    var date_value = []
+    var max_value = 0
+    var start_year = numberToDatetime(data.start).split('-')[0]
+
+    for (val in data.timestamps) {
+        if (data.timestamps[val] > max_value) {
+            max_value = data.timestamps[val]
+        }
+        date_value.push([numberToDatetime(val, type='date'), data.timestamps[val]])
+    }
+    option = {
+        tooltip : {position: 'top'},
+
+        visualMap: {
+            min: 0,
+            max: max_value,
+            calculable: true,
+            orient: 'horizontal',
+            left: 'center',
+            top: 'top',
+            textStyle:{
+                color: '#FFF',
+            }
+        },
+        calendar: {
+            range: start_year, //['2011-01-01', '2011-12-31'],//'2011',
+            cellSize: ['15',15],
+            left: 70,
+            right: 30,
+            dayLabel:{
+                nameMap:'cn',
+                color: '#FFF'
+            },
+            monthLabel:{
+                nameMap: 'cn',
+                color: '#FFF'
+            },
+            yearLabel: {
+                show: true,
+                // formatter:index[i].name,
+            },
+        },
+        series : {
+            type: 'heatmap',
+            coordinateSystem: 'calendar',
+            data: date_value,
+            tooltip: {
+                // TODO：显示调整
+                formatter:function(data){
+                    return data.value[0]+'<br/>'+data.value[1]
+                },
+            },
+        },
+
+    }
+    return option
+}
+
+
+//散点气泡图
+function bubble(data, fd) {
+    var entity = fd.entity
+
+    var schema = [
+        {name: 'x', index: 0, text: verbose_map[fd.datasource][fd.x] || fd.x},
+        {name: 'y', index: 1, text: verbose_map[fd.datasource][fd.y] || fd.y},
+        {name: 'size', index: 2, text: verbose_map[fd.datasource][fd.size] || fd.size},
+        {name: 'name', index:3, text: verbose_map[fd.datasource][entity] || entity}
+    ];
+
+    var option
+    var series = []
+    var legend = []
+    
+    data.forEach(function(val, index, arr){
+        legend.push(val.key)
+        
+        var tmp_values = []
+        val.values.forEach(function(val, index, arr){
+            tmp_values.push([val.x, val.y, val.size, val[entity]])
+        })
+
+        series.push({
+            name: val.key,
+            type: 'scatter',
+            data: tmp_values,
+            symbolSize: function(data) {
+                return Math.sqrt(data[2]) / 5e2;
+            },
+            // TODO: 加参数是否显示标记
+            // markPoint : {
+            //     data : [
+            //         {type : 'max', name: '最大值'},
+            //         {type : 'min', name: '最小值'}
+            //     ]
+            // },
+            // markLine : {
+            //     lineStyle: {
+            //         normal: {
+            //             type: 'solid'
+            //         }
+            //     },
+            //     data : [
+            //         {type : 'average', name: '平均值'},
+            //     ]
+            // },
+        })
+
+    })
+        
+    option = {
+        legend:{
+            data: legend,
+            top: '15',
+            left: '12%',
+        },
+        tooltip: {
+            padding: 10,
+            backgroundColor: '#222',
+            borderColor: '#777',
+            borderWidth: 1,
+            formatter: function (obj) {
+                var value = obj.value;
+                return '<div style="border-bottom: 1px solid rgba(255,255,255,.3); font-size: 18px;padding-bottom: 7px;margin-bottom: 7px">'
+                    + value[3] + ' (' + obj.seriesName + ')'
+                    + '</div>'
+                    + schema[0].text + '：' + value[0] + '<br>'
+                    + schema[1].text + '：' + value[1] + '<br>'
+                    + schema[2].text + '：' + value[2] + '<br>';
+            }
+        },
+
+        xAxis: {
+            type: 'value',
+            name: schema[0].text
+        },
+        yAxis: {
+            type: 'value',
+            name: schema[1].text
+        },
+        series : series,
+
+    }
+
+    //console.log(series)
+    return option
+}
+
+
+//直方图
+function histogram(data) {
+    var option
+    var bins = ecStat.histogram(data)
+
+    option = {
+        tooltip : {
+            trigger: 'axis'
+        },
+        xAxis: [{
+            type: 'value',
+            scale: true, //这个一定要设，不然barWidth和bins对应不上
+        }],
+        yAxis: [{
+            scale: true,
+            type: 'value',
+        }],
+        series: [{
+            //name: 'height',
+            type: 'bar',
+            //barWidth: '99.3%',
+            label: {
+                normal: {
+                    show: true,
+                    position: 'insideTop',
+                    formatter: function(params) {
+                        return params.value[1];
+                    }
+                }
+            },
+            data: bins.data
+        }]
+    }
+    return option
+}
+
+
+//多层拼图
+function sunburst(data, fd) {
+   var option
+   
+   var values = []
+   
+   var num_circle = fd.groupby.length
+
+   for(var i=0; i<num_circle; i++) {
+        values.push({})
+    }
+
+
+   data.forEach(function(val,index, arr){
+
+      for(var i=0; i<num_circle; i++) {
+        if(i == 0) {
+            if (values[i][val[i]] == undefined) {
+                values[i][val[i]] = val[num_circle]
+            } else {
+                values[i][val[i]] += val[num_circle]
+            }
+        } else {
+            //多层命名
+            var key = val.slice(0, i+1).join('_')
+
+            if (values[i][key] == undefined) {
+                values[i][key] = val[num_circle]
+            } else {
+                values[i][key] += val[num_circle]
+            }
+        }
+      }
+
+   })
+   
+   console.log(values[1])
+   //console.log(values[1].sort())
+
+   //转换为符合echart格式
+   
+   //最里面一层
+   var tmp_values = []
+   for(var key in values[0]){
+        tmp_values.push({
+            'name': key,
+            'value': values[0][key]
+        })
+     }
+
+    var pie_values = [tmp_values]
+    
+    for(var key=1; key<values.length; key++){
+        //debugger
+        //找下一层的数据
+        var sub_tmp_values = []
+        for(var i=0; i<tmp_values.length; i++){
+            for(var sub_key in values[key]){
+                //按照上一层数据顺序
+                //多层比较
+                if(sub_key.split('_', key).join('_') == tmp_values[i].name){
+                    sub_tmp_values.push({
+                        'name': sub_key,
+                        'value': values[key][sub_key]
+                    })
+                }    
+            }
+            
+        }
+
+        pie_values.push(sub_tmp_values)
+
+        tmp_values = sub_tmp_values
+         
+    }
+   
+
+
+   //创建series
+   var series = []
+   for(var i=0; i<num_circle; i++) {
+
+        var radius_min = Math.floor(i * 80 / num_circle)
+        var radius_max = radius_min + Math.floor(80 / num_circle)
+        series.push({
+            type: 'pie',
+            selectedMode: 'single',
+            radius : [radius_min + '%', radius_max + '%'],
+            center: ['50%', '50%'],
+            data: pie_values[i],
+            label: {
+                normal:{show: false}
+            },
+
+        })
+    }
+
+   option = {
+       tooltip: {
+           trigger: 'item',
+           formatter: "{b}<br>数量：{c} ({d}%)"
+       },
+       series: series
+   }
+   //console.log(option)
+   return option 
+}
+
+
+//桑基图
+function sankey(data) {
+    var option
+
+    var data_name = []
+
+    var node = []
+
+    data.forEach(function(val, index, arr){
+        if (data_name.indexOf(val.target) == -1) {
+            node.push({'name': val.target})
+            data_name.push(val.target)
+        }
+
+        if (data_name.indexOf(val.source) == -1) {
+            data_name.push(val.source)
+            node.push({'name': val.source})
+        }
+    })
+
+    option = {
+        tooltip: {
+            trigger: 'item',
+            triggerOn: 'mousemove'
+        },
+        series: [
+            {
+                type: 'sankey',
+                layout: 'none',
+                label: {
+                    normal:{
+                        color: '#FFF'
+                    }
+                },
+                data: node,
+                links: data,
+                itemStyle: {
+                    normal: {
+                        borderWidth: 1,
+                        borderColor: '#aaa'
+                    }
+                },
+                lineStyle: {
+                    normal: {
+                        color: 'source',
+                        curveness: 0.5
+                    }
+                }
+            }
+        ]
+    }
+    return option
+}
+
+
+//有向图
+function directed_force(data) {
+    var option
+
+        var data_name = []
+
+        var node = []
+
+        data.forEach(function(val, index, arr){
+            if (data_name.indexOf(val.target) == -1) {
+                node.push({
+                    'name': val.target,
+                    'draggable': true,
+                    "symbolSize": val.value * 10,    //TODO：这个大小要和尺寸成正比
+                })
+                data_name.push(val.target)
+            }
+
+            if (data_name.indexOf(val.source) == -1) {
+                data_name.push(val.source)
+                node.push({
+                    'name': val.source,
+                    'draggable': true,
+                    "symbolSize": val.value * 10,
+                })
+            }
+        })
+
+        option = {
+            series: [
+                {
+                    type: 'graph',
+                    layout: 'force',
+                    force: {
+                        repulsion: 400   // 连线长度
+                    },
+                    focusNodeAdjacency: true,
+                    label: {
+                        normal:{
+                            show:true,
+                            color: '#FFF'
+                        }
+
+                    },
+                    data: node,
+                    links: data,
+                    itemStyle: {
+                        normal: {
+                            borderWidth: 1,
+                            borderColor: '#aaa'
+                        }
+                    },
+                    lineStyle: {
+                        normal: {
+                            color: 'source',
+                            curveness: 0.3,
+                            type: "solid"
+                        }
+                    }
+                }
+            ]
+        }
+        //console.log('graph', option)
+        return option
+}
+
+//和弦图
+function chord(data) {
+    // 数量没有表示出来
+    var option
+
+    var links = []
+
+    var nodes = []
+    //数据处理
+    data.matrix.forEach(function(val, index, arr){
+        for(var i=0; i<val.length; i++) {
+            if(val[i] > 0){
+                links.push({
+                    source: data.nodes[index],
+                    target: data.nodes[i],
+                    //symbolSize: val[i],
+                })
+            }
+        }
+    })
+
+    data.nodes.forEach(function(val, index, arr){
+        nodes.push({
+            name: val
+        })
+    })
+
+    option = {
+        series: [
+            {
+                type: 'graph',
+                layout: 'circular',
+                force: {
+                    initLayout: 'circular',
+                    repulsion: 50,
+                    gravity: 0.5,
+                    edgeLength: 500,
+                    layoutAnimation: true,
+                },
+
+                roam: false,
+                focusNodeAdjacency: true,
+                //ribbonType: true,
+                label: {
+                    normal:{
+                        show:true,
+                        color: '#FFF'
+                    }
+                },
+
+                data: nodes,
+                links: links,
+                itemStyle: {
+                    normal: {
+                        label: {
+                            rotate: true,
+                            show: true,
+
+
+                        },
+                    },
+                    emphasis: {
+                        label: {
+                            show: true
+                        }
+                    }
+                },
+                lineStyle: {
+                    normal: {
+                        color: 'source',
+                        curveness: 0.3,
+                        type: "solid"
+                    }
+                }
+            }
+        ]
+    }
+    return option
+}
+
+//平行坐标
+function parallel(data, fd) {
+    var option
+
+    var parallelAxis = []
+
+    fd.metrics.forEach(function(val,index, arr){
+        parallelAxis.push({
+            dim: index,
+            max: 'dataMax',
+            min: 'dataMin',
+            name: verbose_map[fd.datasource][val]  || val
+        })
+    })
+
+    var series = []
+
+    var legend = []
+
+    data.forEach(function(val,index, arr){
+        var items = []
+        for(var i=0; i< fd.metrics.length; i++){
+            items.push(val[fd.metrics[i]])
+        }
+        
+        series.push({
+            name: val[fd.series],
+            type:'parallel',
+            data: [items],
+            lineStyle: {
+                normal: {
+                    width: 1,
+                    opacity: 0.5
+                }
+            }
+        })
+
+        legend.push(val[fd.series])
+    })
+
+    option = {
+        parallelAxis: parallelAxis,
+        parallel: {                         // 这是『坐标系』的定义
+            left: '5%',                     // 平行坐标系的位置设置
+            right: '13%',
+            bottom: '10%',
+            top: '20%',
+            parallelAxisDefault: {          // 『坐标轴』的公有属性可以配置在这里避免重复书写
+                type: 'value',
+                nameLocation: 'end',
+                nameGap: 20
+            }
+        },
+        legend:{
+            top : 5,
+            data: legend
+        },
+        series: series,
+    }
+
+    return option
+}
+
+//热力图
+function heatmap(data, fd) {
+    var x_name = verbose_map[fd.datasource][fd.all_columns_x]  || fd.all_columns_x
+    var y_name = verbose_map[fd.datasource][fd.all_columns_y]  || fd.all_columns_y
+    var metric = verbose_map[fd.datasource][fd.metric] || fd.metric
+    function formatter(param) {
+        return [
+            x_name + ':' + param.data[0],
+            y_name + ':' + param.data[1],
+            metric + ':' + param.data[3],
+            '占比：' + param.data[2],
+        ].join('<br/>')
+    }
+
+    var option 
+
+    var values = []
+    var xAxis_data = []
+    var yAxis_data = []
+
+    data.records.forEach(function(val, index, arr){
+        if (xAxis_data.indexOf(val.x) == -1){
+            xAxis_data.push(val.x)
+        }
+
+        if (yAxis_data.indexOf(val.y) == -1){
+            yAxis_data.push(val.y)
+        }
+
+        values.push([val.x, val.y, val.perc.toFixed(2), val.v])
+    })
+
+    option = {
+        tooltip: {
+            trigger: 'item',
+        },
+        xAxis: {
+            type: 'category',
+            data: xAxis_data,
+            splitArea: {
+                show: true
+            }
+        },
+        grid: {
+            height: '70%',
+            y: '20%'
+        },
+        yAxis: {
+            type: 'category',
+            data: yAxis_data,
+            splitArea: {
+                show: true
+            }
+        },
+        visualMap: {
+            min: data.extents[0],
+            max: data.extents[1],
+            textStyle:{
+                color: '#FFF',
+            },
+            calculable: true,
+            orient: 'horizontal',
+            left: 'center',
+            top: '15'
+        },
+        series: [{
+            type: 'heatmap',
+            data: values,
+            // label: {
+            //     normal: { // 图上展示
+            //         show: true
+            //     }
+            // },
+            tooltip: {formatter: formatter}, //鼠标移动到这里动态显示
+            itemStyle: {
+                emphasis: {
+                    shadowBlur: 10,
+                    shadowColor: 'rgba(0, 0, 0, 0.5)'
+                }
+            }
+        }]
+    }
+    console.log('heatmap', option)
+    return option
+}
+
+
+
+//返回某一年的总天数  
+function GetYearDays(wYear) {
+  
+  if((wYear%400 == 0) || ((wYear%4==0) && (wYear%100))) {
+    return 366
+  }
+  
+  return 366   
+}  
 //数字转日期
-function numberToDatetime(date){
+function numberToDatetime(date, type='datetime'){
     var tmp_datetime = new Date()
-    tmp_datetime.setTime(Number(date)/1000 * 1000)
+    var date_num = Number(date)
+  
+    if (type=='date') {
+        //,
+        //console.log('time', start)
+        date_num = date_num * 1000
+        //console.log('time-change', date_num)
+        tmp_datetime.setTime(date_num)
+    } else {
+        //tmp_datetime.setTime(date_num * 1000)
+        tmp_datetime.setTime(date_num)
+    }
+    
+    
+    
     return tmp_datetime.toLocaleDateString()
 }
