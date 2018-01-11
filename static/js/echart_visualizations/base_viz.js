@@ -154,7 +154,7 @@ function add_slice(position, url, slice_name, slice_width_unit) {
             case 'table':
               $('#'+slice_id).append('<table id="'+
                 slice_id +'Table" class="table"></table>')
-              $('#'+slice_id+'Table').bootstrapTable('destroy').bootstrapTable(generate_table(response,　slice_name))
+              $('#'+slice_id+'Table').bootstrapTable('destroy').bootstrapTable(generate_table(response,　slice_name, position['size_y']))
               $('#'+slice_id+'Table').bootstrapTable('hideLoading')
               break
 
@@ -209,7 +209,7 @@ function generate_form(response,　slice_name) {
 
 
 //boostrap-table
-function generate_table(response,　slice_name) {
+function generate_table(response,　slice_name, pageSize) {
 
     function genarate_fileds(datas){
         var fields = [{field: '', title: '序号',formatter: function (value, row, index) {return index + 1;}}]
@@ -227,7 +227,7 @@ function generate_table(response,　slice_name) {
         //search: true,
         pagination: true,
         pageNumber: 1,
-        pageSize: 8,
+        pageSize: pageSize*3 - 6 ,
         pageList: [10, 20, 30, 50],
         cache: false,
         //height:'80%',
@@ -276,7 +276,12 @@ function generate_chart(mychart, data, slice_name) {
           option = pie_viz(data.data)
           break;
         case 'country_map':
-          option = china_map(data.data)
+          console.log(data.form_data.other)
+          if (data.form_data.other == 'china_city') {
+            option = china_city(data.data)
+          } else {
+            option = china_map(data.data)  
+          }
           break;
         case 'big_number':
           option = big_number_viz(data.data)
@@ -294,7 +299,23 @@ function generate_chart(mychart, data, slice_name) {
            option = box_plot(data.data)
            break;
         case 'bubble':
-           option = bubble(data.data, data.form_data)
+          if (data.form_data.other == undefined) {
+            option = bubble(data.data, data.form_data)
+          } else {
+            //其他类似方法
+            switch(data.form_data.other.function) {
+              case 'clustering':
+                option = clustering(data.data, data.form_data)
+                break;
+              case 'regression':
+                option = regression(data.data, data.form_data)
+                break;
+              default:
+                console.log(pass)
+            }
+            
+          }
+           
            break;
         case 'cal_heatmap':
            option = cal_heatmap(data.data)
@@ -754,6 +775,119 @@ function china_map(data) {
 }
 
 
+//世界地图 - 地区地图
+function china_city(data) {
+
+    var option = {}
+    var values = []
+    var max_value = data[0].metric
+    data.forEach(function(val,index, arr){
+       var geoCoord = geoCoordMap[val.country_id];
+       if (geoCoord) {
+           values.push({
+                'value':geoCoord.concat(val.metric),
+                'name': val.country_id
+           })
+           if (max_value < val.metric) {
+               max_value = val.metric
+           }
+       }
+    })
+    console.log(values)
+    option = {
+        //backgroundColor: '#404a59',
+        // animation: true,
+        // animationDuration: 1000,
+        // animationEasing: 'cubicInOut',
+        // animationDurationUpdate: 1000,
+        // animationEasingUpdate: 'cubicInOut',
+        // toolbox: {
+        //     iconStyle: {
+        //         normal: {
+        //             borderColor: '#fff'
+        //         },
+        //         emphasis: {
+        //             borderColor: '#b1e4ff'
+        //         }
+        //     }
+        // },
+        // brush: {
+        //     // outOfBrush: {color: '#abc'},
+        //     brushStyle: {
+        //         borderWidth: 2,
+        //         // color: 'rgba(0,0,0,0.2)',
+        //         // borderColor: 'rgba(0,0,0,0.5)',
+        //     },
+        //     seriesIndex: [0, 1],
+        //     throttleType: 'debounce',
+        //     throttleDelay: 300,
+        //     geoIndex: 0
+        // },
+        geo: {
+            map: 'china',
+            // left: '10',
+            // right: '35%',
+            // center: [117.98561551896913, 31.205000490896193],
+            // zoom: 2.5,
+            label: {
+                emphasis: {
+                    show: false
+                }
+            },
+            roam: true,
+            itemStyle: {
+                normal: {
+                    areaColor: '#323c48',
+                    borderColor: '#111'
+                },
+                emphasis: {
+                    areaColor: '#2a333d'
+                }
+            }
+        },
+        tooltip : {
+            trigger: 'item'
+        },
+        // grid: {
+        //     right: 40,
+        //     top: 100,
+        //     bottom: 40,
+        //     width: '30%'
+        // },
+        series : [
+            {
+                type: 'scatter',
+                coordinateSystem: 'geo',
+                data: values,
+                symbolSize: function (val) {
+                    //TODO：点大小的动态调整
+                    return Math.max(val[2]/1e2, 8);
+                },
+                label: {
+                    normal: {
+                        formatter: '{b}',
+                        position: 'right',
+                        show: false
+                    },
+                    emphasis: {
+                        formatter: '{b}',
+                        show: false
+                    }
+                },
+                itemStyle: {
+                    //show:false,
+                    normal: {
+                        color: '#ddb926'
+                    }
+                }
+            },
+
+        ]
+    }
+    return option
+}
+
+
 //词云
 function word_cloud(data) {
     // 数据适配echart格式
@@ -1068,14 +1202,15 @@ function bubble(data, fd) {
             left: '12%',
         },
         tooltip: {
+            trigger: 'axis',
             padding: 10,
             backgroundColor: '#222',
             borderColor: '#777',
             borderWidth: 1,
             formatter: function (obj) {
-                var value = obj.value;
+                var value = obj[0].value;
                 return '<div style="border-bottom: 1px solid rgba(255,255,255,.3); font-size: 18px;padding-bottom: 7px;margin-bottom: 7px">'
-                    + value[3] + ' (' + obj.seriesName + ')'
+                    + value[3] + ' (' + obj[0].seriesName + ')'
                     + '</div>'
                     + schema[0].text + '：' + value[0] + '<br>'
                     + schema[1].text + '：' + value[1] + '<br>'
@@ -1099,6 +1234,212 @@ function bubble(data, fd) {
     return option
 }
 
+//分类-散点图,前端的实时计算,没有保存到数据库
+function clustering(data, fd) {
+  
+  var entity = fd.entity
+  var schema = [
+      {name: 'x', index: 0, text: verbose_map[fd.datasource][fd.x] || fd.x},
+      {name: 'y', index: 1, text: verbose_map[fd.datasource][fd.y] || fd.y},
+      {name: 'size', index: 2, text: verbose_map[fd.datasource][fd.size] || fd.size},
+      {name: 'name', index:3, text: verbose_map[fd.datasource][entity] || entity}
+  ]
+
+  var values = []
+  var origin_values = {}
+  data.forEach(function(val, index, arr){
+      val.values.forEach(function(val, index, arr){
+            //分类参数可以多个 data = [[1,2,3,4], [,.1,2.1,3.1,4.1]], 要归一化才能把所有放在一起比较
+            values.push([val.x, val.y])
+            origin_values[String(val.x)+'|'+String(val.y)] = [val.size, val[entity]]
+        })
+  })
+
+
+  // 分类
+  var result = ecStat.clustering.hierarchicalKMeans(values, Number(fd.other.cluster_number), false)
+
+  var centroids = result.centroids
+  var ptsInCluster = result.pointsInCluster
+  var series = []
+  var legend = []
+  
+  console.log(origin_values)
+  for (var i = 0; i < centroids.length; i++) {
+      
+      //补充更多信息
+      var tmp_data = []
+      ptsInCluster[i].forEach(function(val, index, arr){
+        tmp_data.push([...val, ...origin_values[String(val[0])+'|'+String(val[1])]])
+      })
+      
+      legend.push('类别：' + i)
+
+      series.push({
+          name: '类别：' + i,
+          type: 'scatter',
+          data: tmp_data,
+          symbolSize: function(data) {
+                return Math.sqrt(data[2]) / 5e2;
+            },
+          markPoint: {
+              symbolSize: 50,
+              label: {
+                  normal: {
+                      show: false,
+                      fontSize: 18
+                  },
+                  emphasis: {
+                      show: true,
+                      position: 'top',
+                      formatter: function (params) {
+
+                          return Math.round(params.data.coord[0] * 100) / 100 + '  '
+                              + Math.round(params.data.coord[1] * 100) / 100 + ' ';
+                      },
+                      textStyle: {
+                          color: '#FFF'
+                      }
+                  }
+              },
+              
+              itemStyle: {
+                  normal: {
+                      opacity: 0.8
+                  }
+              },
+              data: [{
+                  coord: centroids[i]
+              }]
+          }
+      });
+  }
+
+  var option = {
+        legend: {
+          data: legend,
+          top: '15',
+          left: '12%',
+        },
+        tooltip: {
+            trigger: 'axis',
+            padding: 10,
+            backgroundColor: '#222',
+            borderColor: '#777',
+            borderWidth: 1,
+            formatter: function (obj) {
+                var value = obj[0].data
+                return '<div style="border-bottom: 1px solid rgba(255,255,255,.3); font-size: 18px;padding-bottom: 7px;margin-bottom: 7px">'
+                    + value[3] + ' (' + obj[0].seriesName + ')'
+                    + '</div>'
+                    + schema[0].text + '：' + value[0] + '<br>'
+                    + schema[1].text + '：' + value[1] + '<br>'
+                    + schema[2].text + '：' + value[2] + '<br>';
+            }
+        },
+        xAxis: {
+            type: 'value',
+            name: schema[0].text,
+        },
+        yAxis: {
+            type: 'value',
+            name: schema[1].text,
+        },
+        series: series
+    }
+ return option
+}
+
+//回归分析散点图,前端的实时计算,没有保存到数据库
+function regression(data, fd) {
+  
+  var entity = fd.entity
+  var schema = [
+      {name: 'x', index: 0, text: verbose_map[fd.datasource][fd.x] || fd.x},
+      {name: 'y', index: 1, text: verbose_map[fd.datasource][fd.y] || fd.y},
+      {name: 'size', index: 2, text: verbose_map[fd.datasource][fd.size] || fd.size},
+      {name: 'name', index:3, text: verbose_map[fd.datasource][entity] || entity}
+  ]
+
+  var values = []
+  var origin_values = []
+  data.forEach(function(val, index, arr){
+      val.values.forEach(function(val, index, arr){
+            values.push([val.x, val.y])
+            origin_values.push([val.x, val.y, val.size, val[entity]])
+        })
+  })
+
+
+  // 回归分析
+  if(fd.other.type !== 'polynomial') {
+    var myRegression = ecStat.regression(fd.other.type, values)
+  } else {
+    //多项式多number参数
+    console.log(fd.other.type)
+    var myRegression = ecStat.regression(fd.other.type, values, Number(fd.other.number))
+  }
+  
+
+  var option = {
+        tooltip: {
+            trigger: 'axis',
+            padding: 10,
+            backgroundColor: '#222',
+            borderColor: '#777',
+            borderWidth: 1,
+            formatter: function (obj) {
+                var value = obj[0].data
+                return '<div style="border-bottom: 1px solid rgba(255,255,255,.3); font-size: 18px;padding-bottom: 7px;margin-bottom: 7px">'
+                    + value[3] + ' (' + obj[0].seriesName + ')'
+                    + '</div>'
+                    + schema[0].text + '：' + value[0] + '<br>'
+                    + schema[1].text + '：' + value[1] + '<br>'
+                    + schema[2].text + '：' + value[2] + '<br>';
+            }
+        },
+        xAxis: {
+            type: 'value',
+            name: schema[0].text,
+        },
+        yAxis: {
+            type: 'value',
+            name: schema[1].text,
+        },
+        series: [{
+            name: 'scatter',
+            type: 'scatter',
+            data: origin_values
+        }, {
+            name: 'line',
+            type: 'line',
+            showSymbol: false,
+            data: myRegression.points,
+            markPoint: {
+                itemStyle: {
+                    normal: {
+                        color: 'transparent'
+                    }
+                },
+                label: {
+                    normal: {
+                        show: true,
+                        position: 'left',
+                        formatter: myRegression.expression,
+                        textStyle: {
+                            color: '#FFF',
+                            fontSize: 20
+                        }
+                    }
+                },
+                data: [{
+                    coord: myRegression.points[myRegression.points.length - 1]
+                }]
+            }
+        }]
+    }
+ return option
+}
 
 //直方图
 function histogram(data) {
