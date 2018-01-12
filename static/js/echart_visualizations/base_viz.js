@@ -261,7 +261,7 @@ function generate_chart(mychart, data, slice_name) {
     switch(data.form_data.viz_type)
     {
         case 'dist_bar':
-          option = dist_bar_viz(data.data, data.form_data.datasource)
+          option = dist_bar_viz(data.data, data.form_data)
           break;
         case 'line':
           option = time_line_viz(data.data)
@@ -276,18 +276,20 @@ function generate_chart(mychart, data, slice_name) {
           option = pie_viz(data.data)
           break;
         case 'country_map':
-          console.log(data.form_data.other)
-          if (data.form_data.other == 'china_city') {
-            option = china_city(data.data)
+          if (data.form_data.stat_unit == 'city') {
+            option = china_city(data.data,data.form_data)
           } else {
-            option = china_map(data.data)  
+            option = china_map(data.data)
           }
+          break;
+        case 'world_map':
+          option = world_map(data.data)
           break;
         case 'big_number':
           option = big_number_viz(data.data)
           break;
         case 'big_number_total':
-          option = big_number_total(data.data)
+          option = big_number_total(data.data, data.form_data.y_axis_format)
           break;
         case 'word_cloud':
            option = word_cloud(data.data)
@@ -299,19 +301,16 @@ function generate_chart(mychart, data, slice_name) {
            option = box_plot(data.data)
            break;
         case 'bubble':
-          if (data.form_data.other == undefined) {
+          if (data.form_data.stat_function == "") {
             option = bubble(data.data, data.form_data)
           } else {
             //其他类似方法
-            switch(data.form_data.other.function) {
+            switch(data.form_data.stat_function) {
               case 'clustering':
                 option = clustering(data.data, data.form_data)
                 break;
-              case 'regression':
-                option = regression(data.data, data.form_data)
-                break;
               default:
-                console.log(pass)
+                option = regression(data.data, data.form_data)
             }
             
           }
@@ -513,11 +512,12 @@ function pie_viz(data) {
 
 
 //柱状图
-function dist_bar_viz(data, table_id) {
+function dist_bar_viz(data, fd) {
     var option = {}
     var values = []
     var legend = []
     var xAxis_values = []
+    var table_id = fd.datasource
     data.forEach(function(val,index, arr){
         var tmp_values = []
         val.values.forEach(function(v,i, arr){
@@ -553,7 +553,12 @@ function dist_bar_viz(data, table_id) {
         ],
         yAxis : [
             {
-                type : 'value'
+                type : 'value',
+                axisLabel: {
+                  formatter: function(value, index){
+                    return axisLabel_formatter(value, index, fd.y_axis_format) 
+                  }
+                }
             }
         ],
         series : gene_bar_series(values, legend)
@@ -696,18 +701,18 @@ function big_number_viz(data){
 }
 
 //大数字
-function big_number_total(data){
+function big_number_total(data, data_form){
 
     option = {
         title: [
            {
                 z:5,
-                text: data.data[0],
+                text: axisLabel_formatter(data.data[0], 0, data_form),
                 subtext: data.subheader,
                 left:'center',
                 top:'35%',
                 textStyle:{
-                    fontSize:60,
+                    fontSize:45,
                     align:'center',
                 },
                 subtextStyle:{
@@ -724,6 +729,58 @@ function big_number_total(data){
 }
 
 //地图
+function world_map(data) {
+    //TODO：还有气泡没有做
+    var option = {}
+    var values = []
+    var max_value = data[0].m1
+    data.forEach(function(val,index, arr){
+       values.push({
+            //TODO: 包含多个数据
+            'value':val.m1,
+            'name': val.name
+       })
+       if (max_value < val.m1) {
+           max_value = val.m1
+       }
+    })
+
+    option = {
+        tooltip : {
+            trigger: 'item',
+            //TODO：显示数据
+        },
+
+        visualMap: {
+            min: 0,
+            max: max_value,
+            left: 'left',
+            top: 'bottom',
+            text: ['高','低'],           // 文本，默认为数值文本
+            calculable: true,
+            textStyle:{
+                color: '#FFF',
+            }
+        },
+
+        series: [
+            {
+                type: 'map',
+                //zoom: 2,
+                itemStyle:{  
+                  emphasis:{label:{show:true}}  
+                }, 
+                roam: true,   //可以放缩
+                mapType: 'world',
+                data: values
+            }]
+        
+    }
+    return option
+}
+
+
+//中国地图
 function china_map(data) {
 
     var option = {}
@@ -775,11 +832,14 @@ function china_map(data) {
 }
 
 
-//世界地图 - 地区地图
-function china_city(data) {
+//地区地图
+function china_city(data, fd) {
 
     var option = {}
     var values = []
+    var bol_size = Number(fd.max_bubble_size)
+    var reduce_size = Number(fd.reduce_size)
+
     var max_value = data[0].metric
     data.forEach(function(val,index, arr){
        var geoCoord = geoCoordMap[val.country_id];
@@ -795,40 +855,9 @@ function china_city(data) {
     })
     console.log(values)
     option = {
-        //backgroundColor: '#404a59',
-        // animation: true,
-        // animationDuration: 1000,
-        // animationEasing: 'cubicInOut',
-        // animationDurationUpdate: 1000,
-        // animationEasingUpdate: 'cubicInOut',
-        // toolbox: {
-        //     iconStyle: {
-        //         normal: {
-        //             borderColor: '#fff'
-        //         },
-        //         emphasis: {
-        //             borderColor: '#b1e4ff'
-        //         }
-        //     }
-        // },
-        // brush: {
-        //     // outOfBrush: {color: '#abc'},
-        //     brushStyle: {
-        //         borderWidth: 2,
-        //         // color: 'rgba(0,0,0,0.2)',
-        //         // borderColor: 'rgba(0,0,0,0.5)',
-        //     },
-        //     seriesIndex: [0, 1],
-        //     throttleType: 'debounce',
-        //     throttleDelay: 300,
-        //     geoIndex: 0
-        // },
+
         geo: {
             map: 'china',
-            // left: '10',
-            // right: '35%',
-            // center: [117.98561551896913, 31.205000490896193],
-            // zoom: 2.5,
             label: {
                 emphasis: {
                     show: false
@@ -848,12 +877,6 @@ function china_city(data) {
         tooltip : {
             trigger: 'item'
         },
-        // grid: {
-        //     right: 40,
-        //     top: 100,
-        //     bottom: 40,
-        //     width: '30%'
-        // },
         series : [
             {
                 type: 'scatter',
@@ -861,7 +884,7 @@ function china_city(data) {
                 data: values,
                 symbolSize: function (val) {
                     //TODO：点大小的动态调整
-                    return Math.max(val[2]/1e2, 8);
+                    return Math.max(val[2] * bol_size / reduce_size, 8);
                 },
                 label: {
                     normal: {
@@ -1158,7 +1181,10 @@ function bubble(data, fd) {
     var option
     var series = []
     var legend = []
-    
+
+    var bol_size = Number(fd.max_bubble_size)
+    var reduce_size = fd.reduce_size
+
     data.forEach(function(val, index, arr){
         legend.push(val.key)
         
@@ -1166,13 +1192,13 @@ function bubble(data, fd) {
         val.values.forEach(function(val, index, arr){
             tmp_values.push([val.x, val.y, val.size, val[entity]])
         })
-
+        
         series.push({
             name: val.key,
             type: 'scatter',
             data: tmp_values,
             symbolSize: function(data) {
-                return Math.sqrt(data[2]) / 5e2;
+                return Math.max(Math.sqrt(data[2]) * bol_size / reduce_size, 5)
             },
             // TODO: 加参数是否显示标记
             // markPoint : {
@@ -1247,6 +1273,10 @@ function clustering(data, fd) {
 
   var values = []
   var origin_values = {}
+
+  var bol_size = Number(fd.max_bubble_size)
+  var reduce_size = Number(fd.reduce_size)
+  
   data.forEach(function(val, index, arr){
       val.values.forEach(function(val, index, arr){
             //分类参数可以多个 data = [[1,2,3,4], [,.1,2.1,3.1,4.1]], 要归一化才能把所有放在一起比较
@@ -1254,17 +1284,15 @@ function clustering(data, fd) {
             origin_values[String(val.x)+'|'+String(val.y)] = [val.size, val[entity]]
         })
   })
-
-
   // 分类
-  var result = ecStat.clustering.hierarchicalKMeans(values, Number(fd.other.cluster_number), false)
+  var result = ecStat.clustering.hierarchicalKMeans(values, Number(fd.stat_number), false)
 
   var centroids = result.centroids
   var ptsInCluster = result.pointsInCluster
   var series = []
   var legend = []
   
-  console.log(origin_values)
+
   for (var i = 0; i < centroids.length; i++) {
       
       //补充更多信息
@@ -1280,7 +1308,7 @@ function clustering(data, fd) {
           type: 'scatter',
           data: tmp_data,
           symbolSize: function(data) {
-                return Math.sqrt(data[2]) / 5e2;
+                return Math.max(Math.sqrt(data[2]) * bol_size / reduce_size, 10)
             },
           markPoint: {
               symbolSize: 50,
@@ -1372,12 +1400,12 @@ function regression(data, fd) {
 
 
   // 回归分析
-  if(fd.other.type !== 'polynomial') {
-    var myRegression = ecStat.regression(fd.other.type, values)
+  if(fd.stat_function !== 'polynomial') {
+    var myRegression = ecStat.regression(fd.stat_function, values)
   } else {
     //多项式多number参数
     console.log(fd.other.type)
-    var myRegression = ecStat.regression(fd.other.type, values, Number(fd.other.number))
+    var myRegression = ecStat.regression(fd.stat_function, values, Number(fd.stat_number))
   }
   
 
@@ -1424,7 +1452,8 @@ function regression(data, fd) {
                 label: {
                     normal: {
                         show: true,
-                        position: 'left',
+                        top: '30%',
+                        left: '60%',
                         formatter: myRegression.expression,
                         textStyle: {
                             color: '#FFF',
@@ -1972,3 +2001,49 @@ function numberToDatetime(date, type='datetime'){
     
     return tmp_datetime.toLocaleDateString()
 }
+
+
+//坐标轴的显示
+
+function axisLabel_formatter(value, index, data_form) {
+    // 格式化刻度显示
+    var text
+    switch (data_form) {
+      case '.3s':
+        text = (value / 1000).toFixed(1) + 'K'
+      break
+
+      case '.4s':
+        text = (value / 10000).toFixed(1) + '万'
+      break
+
+      case '￥,.2f':
+        //TODO: ￥12,345.43 这样的格式
+        text = '￥' + Number(value).toFixed(2) 
+      break
+
+      //TODO:其他格式
+      // case '.4r':
+
+      // break
+
+      // case '.3%':
+
+      // break
+
+      default:
+      text = value
+      console.log('no data_form pass')
+    }
+    
+    return text
+}
+  //所有格式     
+  // ['.3s', '.3s | 12.3k'],
+  // ['.3%', '.3% | 1234543.210%'],
+  // ['.4r', '.4r | 12350'],
+  // ['.3f', '.3f | 12345.432'],
+  // ['+,', '+, | +12,345.4321'],
+  // ['$,.2f', '$,.2f | $12,345.43'],
+  // ['.4s', '.4s | 12.3万'],
+  // ['￥,.2f', '￥,.2f | ￥12,345.43'],
