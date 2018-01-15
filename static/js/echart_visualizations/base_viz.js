@@ -14,24 +14,52 @@ const colors=['#fad797','#59ccf7','#c3b4df']
 //echart风格
 const chart_style = 'dark' //html要相应引入主题js文件
 
-const current_url = window.location.href
+
+//TODO: 拆分一下不同参数
+const current_url = decodeURI(window.location.href)
 
 var verbose_map  //存放列名的别名
 
+//时间粒度
+const time_grain = [
+  ['second', '每秒'],
+  ['minute', '每分钟'],
+  ['5 minute', '每5分钟'],
+  ['half hour', '每半小时'],
+  ['hour', '每小时'],
+  ['day', '每天'],
+  ['week', '每周'],
+  ['month', '每月'],
+  ['quarter', '每季度'],
+  ['year', '每年']
+]
+
+
 var filter_paramets = []
 var filter_form = {}
+var time_filter = {}
+
  if (current_url.indexOf('?') > -1){
     var paramets = current_url.split('?')[1].split('&')
     paramets.forEach(function(val, index, arr){
         var v = val.split('=')
+
         if (v[1] !== '') {
-            //暂时单选
-            filter_paramets.push({
-                col:v[0],
-                op:"in",
-                val:[v[1]]
-            })
-            filter_form[v[0]] = v[1]
+            //不是时间参数,暂时单选
+            //TODO: 多选
+            if (v[0]!=='since' && v[0]!=='until' && v[0]!=='time_grain_sqla') {
+                filter_paramets.push({
+                  col:v[0],
+                  op:"in",
+                  val:[v[1]]
+              })
+              filter_form[v[0]] = v[1]
+            } else {
+              //时间参数
+              //console.log('time filter', v)
+              time_filter[v[0]] = v[1]
+            }
+            
         }
         
     })
@@ -91,9 +119,17 @@ function read_dashboard(dashboard_id) {
 
             var form_data = val.form_data
 
-            if(filter_paramets.length > 0 && val.form_data.viz_type !== "filter_box"){
-                form_data.extra_filters = filter_paramets
+            if (val.form_data.viz_type !== "filter_box") {
+              if(filter_paramets.length > 0){
+                  form_data.extra_filters = filter_paramets                
+              }
+              //时间参数
+              for(var key in time_filter) {
+                form_data[key] = time_filter[key]
+              }
+
             }
+            
 
             var url = base_slice_url + table_id  + '?form_data=' + JSON.stringify(val.form_data)
 
@@ -189,8 +225,44 @@ function add_slice(position, url, slice_name, slice_width_unit) {
 //表单
 function generate_form(response,　slice_name) {
     var dom = '<form method="get"  role="form">'
+    // 添加时间选项
+    if (response.form_data.date_filter) {
+
+      dom += '<label for=“since”> 开始时间 </label>'
+      if(time_filter.since == undefined) {
+        dom += '<input class="form-control" type="date" name="since">'
+      } else {
+        dom += '<input class="form-control" type="date" name="since" value="' + time_filter.since + '">'
+      }
+
+
+      dom += '<label for=“until”> 结束时间 </label>'
+
+      if(time_filter.until == undefined) {
+        dom += '<input class="form-control" type="date" name="until">'
+      } else {
+        dom += '<input class="form-control" type="date" name="until" value="' + time_filter.until + '">'
+      }
+    }
+
+    //添加时间粒度
+    if (response.form_data.show_sqla_time_granularity) {
+      dom += '<label for=time_grain_sqla> 时间粒度 </label>'
+      dom += '<select class="form-control" name="time_grain_sqla">'
+      dom += '<option></option>'
+      time_grain.forEach(function(val,index,arr) {
+        if (time_filter.time_grain_sqla == val[0]) {
+          dom += '<option value="'+ val[0] +'" selected = "selected">' + val[1] + '</option>'
+        } else {
+          dom += '<option value="'+ val[0] +'">' + val[1] + '</option>'
+        }
+      })
+      dom += '</select>'
+    }
+    
+    //添加筛选项  
     for (var i in response.data)  {
-        dom += '<label for="'+ i +'">'+i+'</label>'
+        dom += '<label for="'+ i +'">'+verbose_map[response.form_data.datasource][i]+'</label>'
         dom  += '<select class="form-control" name='+ i +'>'
         dom += '<option></option>'
         response.data[i].forEach(function(val,index,arr){
@@ -202,7 +274,7 @@ function generate_form(response,　slice_name) {
         })
         dom += '</select>'
     }
-    dom += '<button type="submit" class="btn-info">筛选</button>'
+    dom += '<hr><button type="submit" class="btn-info">筛选</button>'
     dom += '</form>'
     return dom
 }
@@ -261,16 +333,16 @@ function generate_chart(mychart, data, slice_name) {
     switch(data.form_data.viz_type)
     {
         case 'dist_bar':
-          option = dist_bar_viz(data.data, data.form_data)
+          option = dist_bar_viz(data.data,  data.form_data)
           break;
         case 'line':
-          option = time_line_viz(data.data)
+          option = time_line_viz(data.data, data.form_data)
           break;
         case 'bar':
-          option = time_line_viz(data.data)
+          option = time_line_viz(data.data, data.form_data)
           break;
         case 'area':
-          option = time_line_viz(data.data, boundaryGap=false)
+          option = time_line_viz(data.data, data.form_data, boundaryGap=false)
           break;
         case 'pie':
           option = pie_viz(data.data)
@@ -298,7 +370,7 @@ function generate_chart(mychart, data, slice_name) {
            option = treemap(data.data, data.form_data.datasource)
            break;
         case 'box_plot':
-           option = box_plot(data.data)
+           option = box_plot(data.data, data.form_data)
            break;
         case 'bubble':
           if (data.form_data.stat_function == "") {
@@ -385,6 +457,7 @@ function generate_chart(mychart, data, slice_name) {
           option.toolbox.feature.magicType = {
             type: ['line', 'bar', 'stack', 'tiled']
           }
+          option.dataZoom = {show:true}
           break;
         case 'line': 
           option.toolbox.feature.magicType = {
@@ -570,7 +643,7 @@ function dist_bar_viz(data, fd) {
 
 //时间-折线
 //柱状图
-function time_line_viz(data, boundaryGap=true) {
+function time_line_viz(data, fd, boundaryGap=true) {
     var option = {}
     var values = []
     var legend = []
@@ -617,6 +690,11 @@ function time_line_viz(data, boundaryGap=true) {
             {   
                 type : 'value',
                 min: 'dataMin',
+                axisLabel: {
+                  formatter: function(value, index){
+                    return axisLabel_formatter(value, index, fd.y_axis_format) 
+                  }
+                }
             }
         ],
         series : gene_bar_series(values, legend, type='line', boundaryGap=boundaryGap)
@@ -1035,7 +1113,7 @@ function treemap(data, table_id) {
 
 
 //箱线图
-function box_plot(data) {
+function box_plot(data, fd) {
     
     function formatter(param) {
         return [
@@ -1062,29 +1140,30 @@ function box_plot(data) {
 
     option = {
         tooltip : {
-            trigger: 'item',
-            axisPointer : {            // 坐标轴指示器，坐标轴触发有效
-                type : 'shadow'        // 默认为直线，可选为：'line' | 'shadow'
-            }
+          trigger: 'item',
+          axisPointer : {            // 坐标轴指示器，坐标轴触发有效
+              type : 'shadow'        // 默认为直线，可选为：'line' | 'shadow'
+          }
         },
-        xAxis : [
-            {
-                type : 'category',
-                data : xAxis_values,
-                splitArea: {show: false},
-                axisLabel: {formatter: '{value}'},
-                splitLine: {show: false}
+        xAxis : {
+          type : 'category',
+          data : xAxis_values,
+          splitArea: {show: false},
+          axisLabel: {formatter: '{value}'},
+          splitLine: {show: false}
+        },
+        yAxis : {
+          type : 'value',
+          name : '-',
+          splitArea: {
+              show: false
+          },
+          axisLabel: {
+            formatter: function(value, index){
+              return axisLabel_formatter(value, index, fd.y_axis_format) 
             }
-        ],
-        yAxis : [
-            {
-                type : 'value',
-                name : '-',
-                splitArea: {
-                    show: false
-                }
-            }
-        ],
+          }
+        },
         series : [{
             name: '-',
             type: 'boxplot',
@@ -1097,9 +1176,9 @@ function box_plot(data) {
             symbolSize: 8,
             barGap: '10%',
             data: outliers
-        }
-        ]
+        }]
     }
+    console.log('box:', option)
     return option
 
 }
@@ -1250,7 +1329,12 @@ function bubble(data, fd) {
         },
         yAxis: {
             type: 'value',
-            name: schema[1].text
+            name: schema[1].text,
+            axisLabel: {
+              formatter: function(value, index){
+                return axisLabel_formatter(value, index, fd.y_axis_format) 
+              }
+            }
         },
         series : series,
 
@@ -1372,6 +1456,11 @@ function clustering(data, fd) {
         yAxis: {
             type: 'value',
             name: schema[1].text,
+            axisLabel: {
+              formatter: function(value, index){
+                return axisLabel_formatter(value, index, fd.y_axis_format) 
+              }
+            }
         },
         series: series
     }
@@ -1433,6 +1522,11 @@ function regression(data, fd) {
         yAxis: {
             type: 'value',
             name: schema[1].text,
+            axisLabel: {
+              formatter: function(value, index){
+                return axisLabel_formatter(value, index, fd.y_axis_format) 
+              }
+            }
         },
         series: [{
             name: 'scatter',
@@ -2010,7 +2104,11 @@ function axisLabel_formatter(value, index, data_form) {
     var text
     switch (data_form) {
       case '.3s':
-        text = (value / 1000).toFixed(1) + 'K'
+        if(value < 1000) {
+          text = value
+        } else {
+          text = (value / 1000).toFixed(1) + 'K'  
+        }
       break
 
       case '.4s':
@@ -2033,7 +2131,6 @@ function axisLabel_formatter(value, index, data_form) {
 
       default:
       text = value
-      console.log('no data_form pass')
     }
     
     return text
