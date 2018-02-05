@@ -39,6 +39,12 @@ var filter_paramets = []
 var filter_form = {}
 var time_filter = {}
 
+//排序函数
+function sortNumber(a,b)
+{
+  return a - b
+}
+
  if (current_url.indexOf('?') > -1){
     var paramets = current_url.split('?')[1].split('&')
     paramets.forEach(function(val, index, arr){
@@ -77,9 +83,15 @@ function read_dashboard(dashboard_id) {
         //初始化
         $(dashboard_title_id).children().remove()
 
+        //访问禁止
+        if (response.dashboard == undefined) {
+          alert("没有权限访问，请联系管理员"); 
+          window.location.href="/superset/welcome"
+          return
+        }
         //权限问题提醒
         if (response.dashboard.status == 401) {
-            $(dashboard_title_id).append('<div class="alert alert-warning" role="alert">'+ response.message +'</div>')
+            $(dashboard_title_id).append('<div class="alert alert-warning" role="alert">'+ response.dashboard.message +'<a href="/superset/welcome"> 返回首页</a></div>')
             return
         }
         
@@ -358,7 +370,7 @@ function generate_chart(mychart, data, slice_name) {
           option = world_map(data.data)
           break;
         case 'big_number':
-          option = big_number_viz(data.data)
+          option = big_number_viz(data.data, data.form_data)
           break;
         case 'big_number_total':
           option = big_number_total(data.data, data.form_data.y_axis_format)
@@ -373,7 +385,7 @@ function generate_chart(mychart, data, slice_name) {
            option = box_plot(data.data, data.form_data)
            break;
         case 'bubble':
-          if (data.form_data.stat_function == "") {
+          if (data.form_data.stat_function == null) {
             option = bubble(data.data, data.form_data)
           } else {
             //其他类似方法
@@ -480,6 +492,13 @@ function generate_chart(mychart, data, slice_name) {
           console.log('pass')
           break;
         case 'big_number':
+          option.title.push({
+            text: slice_name,
+            textAlign: 'left',
+           })
+          break;
+
+        case 'big_number_total':
           option.title.push({
             text: slice_name,
             textAlign: 'left',
@@ -648,6 +667,7 @@ function time_line_viz(data, fd, boundaryGap=true) {
     var values = []
     var legend = []
     var xAxis_values = []
+    var table_id = fd.datasource
     data.forEach(function(val,index, arr){
         var tmp_values = []
         val.values.forEach(function(v,i, arr){
@@ -657,9 +677,19 @@ function time_line_viz(data, fd, boundaryGap=true) {
            }
         })
         values.push(tmp_values)
-        legend.push(val.key[0])     
+        // key可能是list 或 string
+        if(typeof val.key === 'string') {
+          legend.push(verbose_map[table_id][val.key] || val.key)  
+        } else {
+          var tmp_key = ''
+          val.key.forEach(function(val, index, arr){
+            tmp_key += verbose_map[table_id][val] || val
+            tmp_key += ','
+          })
+          legend.push(tmp_key.substring(0,tmp_key.length-1))
+        }
+             
     })
-
     option = {
         legend:{
             //orient: 'horizontal',
@@ -689,7 +719,8 @@ function time_line_viz(data, fd, boundaryGap=true) {
         yAxis : [
             {   
                 type : 'value',
-                min: 'dataMin',
+                //min: 'dataMin',
+                name: fd.y_axis_label,
                 axisLabel: {
                   formatter: function(value, index){
                     return axisLabel_formatter(value, index, fd.y_axis_format) 
@@ -705,7 +736,7 @@ function time_line_viz(data, fd, boundaryGap=true) {
 
 
 //折线图（大数字）
-function big_number_viz(data){
+function big_number_viz(data, fd){
     var option = {}
     var values = []
     var xAxis_values = []
@@ -733,7 +764,7 @@ function big_number_viz(data){
         title: [
            {
                 z:5,
-                text: values[values.length-1],
+                text: axisLabel_formatter(values[values.length-1], 0, fd.y_axis_format),
                 subtext: compare_value.toFixed(2) + '%'+ data.compare_suffix,
                 left:'center',
                 top:'50%',
@@ -880,7 +911,7 @@ function china_map(data) {
         },
 
         visualMap: {
-            min: 0,
+            //min: 'dataMin',
             max: max_value,
             left: 'left',
             top: 'bottom',
@@ -917,7 +948,7 @@ function china_city(data, fd) {
     var values = []
     var bol_size = Number(fd.max_bubble_size)
     var reduce_size = Number(fd.reduce_size)
-
+    //TODO：数字显示整理
     var max_value = data[0].metric
     data.forEach(function(val,index, arr){
        var geoCoord = geoCoordMap[val.country_id];
@@ -931,7 +962,7 @@ function china_city(data, fd) {
            }
        }
     })
-    console.log(values)
+
     option = {
 
         geo: {
@@ -954,6 +985,17 @@ function china_city(data, fd) {
         },
         tooltip : {
             trigger: 'item'
+        },
+        visualMap: {
+            //min: 0,   //暂时没有负数
+            max: max_value,
+            left: 'left',
+            top: 'bottom',
+            text: ['高','低'],           // 文本，默认为数值文本
+            calculable: true,
+            textStyle:{
+                color: '#FFF',
+            }
         },
         series : [
             {
@@ -1307,15 +1349,24 @@ function bubble(data, fd) {
             left: '12%',
         },
         tooltip: {
-            trigger: 'axis',
+            trigger: 'item',
             padding: 10,
             backgroundColor: '#222',
             borderColor: '#777',
             borderWidth: 1,
             formatter: function (obj) {
-                var value = obj[0].value;
+                var value
+                var series_name
+                if(obj.value == undefined) {
+                  value = obj[0].value
+                  series_name = obj[0].seriesName
+                } else {
+                  value = obj.value
+                  series_name = obj.seriesName
+                }
+                  
                 return '<div style="border-bottom: 1px solid rgba(255,255,255,.3); font-size: 18px;padding-bottom: 7px;margin-bottom: 7px">'
-                    + value[3] + ' (' + obj[0].seriesName + ')'
+                    + value[3] + ' (' + series_name + ')'
                     + '</div>'
                     + schema[0].text + '：' + value[0] + '<br>'
                     + schema[1].text + '：' + value[1] + '<br>'
@@ -1921,9 +1972,20 @@ function parallel(data, fd) {
 
     var parallelAxis = []
 
+    var begin_number = 0
+    // 包含项目轴
+    if (fd.include_series) {
+      begin_number = 1
+      parallelAxis.push({
+            dim: 0,
+            name: verbose_map[fd.datasource][fd.series]  || fd.series,
+            type: 'category',
+        })
+    }
+
     fd.metrics.forEach(function(val,index, arr){
         parallelAxis.push({
-            dim: index,
+            dim: index + begin_number,
             max: 'dataMax',
             min: 'dataMin',
             name: verbose_map[fd.datasource][val]  || val
@@ -1936,6 +1998,12 @@ function parallel(data, fd) {
 
     data.forEach(function(val,index, arr){
         var items = []
+        
+        // 包含项目轴
+        if (fd.include_series) {
+          items.push(val[fd.series])
+        }
+
         for(var i=0; i< fd.metrics.length; i++){
             items.push(val[fd.metrics[i]])
         }
@@ -1955,6 +2023,11 @@ function parallel(data, fd) {
         legend.push(val[fd.series])
     })
 
+    // 包含项目轴
+    if (fd.include_series) {
+      parallelAxis[0]['data'] = legend
+    }
+    
     option = {
         parallelAxis: parallelAxis,
         parallel: {                         // 这是『坐标系』的定义
@@ -1969,7 +2042,8 @@ function parallel(data, fd) {
             }
         },
         legend:{
-            top : 5,
+            top: '15',
+            left: '12%',
             data: legend
         },
         series: series,
@@ -1997,18 +2071,34 @@ function heatmap(data, fd) {
     var values = []
     var xAxis_data = []
     var yAxis_data = []
-
+    var all_is_number = true
     data.records.forEach(function(val, index, arr){
         if (xAxis_data.indexOf(val.x) == -1){
-            xAxis_data.push(val.x)
+            xAxis_data.push(val.x.toString())
         }
 
         if (yAxis_data.indexOf(val.y) == -1){
-            yAxis_data.push(val.y)
+              // echart bug 如果是数字不管怎样都会变成number
+              if (isNaN(Number(val.y))) {
+                  all_is_number =false
+              }
+              yAxis_data.push(val.y)  
         }
 
         values.push([val.x, val.y, val.perc.toFixed(2), val.v])
     })
+
+    if (all_is_number) {
+       yAxis_data = yAxis_data.sort(sortNumber)
+       yAxis_data.forEach(function(val, index, arr){
+           // echart bug 如果是数字不管怎样都会变成number, 所以加如一点东西，让他强制是string
+           yAxis_data[index] = val.toString() + '_'
+       })
+       values.forEach(function(val, index, arr){
+          val[1] = val[1].toString() + '_'
+       })
+    }
+
 
     option = {
         tooltip: {
@@ -2017,9 +2107,9 @@ function heatmap(data, fd) {
         xAxis: {
             type: 'category',
             data: xAxis_data,
-            splitArea: {
-                show: true
-            }
+            // splitArea: {
+            //     show: true
+            // }
         },
         grid: {
             height: '70%',
@@ -2028,9 +2118,9 @@ function heatmap(data, fd) {
         yAxis: {
             type: 'category',
             data: yAxis_data,
-            splitArea: {
-                show: true
-            }
+            // splitArea: {
+            //     show: false
+            // }
         },
         visualMap: {
             min: data.extents[0],
@@ -2060,7 +2150,6 @@ function heatmap(data, fd) {
             }
         }]
     }
-    console.log('heatmap', option)
     return option
 }
 
@@ -2104,10 +2193,20 @@ function axisLabel_formatter(value, index, data_form) {
     var text
     switch (data_form) {
       case '.3s':
-        if(value < 1000) {
-          text = value
+        if (parseInt(value)==value) {
+          // 是否为整数
+          if(value < 1000) {
+            text = value.toString()
+          } else {
+            text = (value / 1000).toFixed(1) + 'K'
+          }
+          
         } else {
-          text = (value / 1000).toFixed(1) + 'K'  
+          if(value < 1000) {
+              text = value.toFixed(1)
+          } else {
+            text = (value / 1000).toFixed(1) + 'K'  
+          }
         }
       break
 
