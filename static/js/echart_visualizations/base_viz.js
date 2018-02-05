@@ -424,6 +424,11 @@ function generate_chart(mychart, data, slice_name) {
         case 'heatmap':
            option = heatmap(data.data, data.form_data)
            break;
+
+        case 'pivot_table':
+           option = pivot_table(data.data, data.form_data)
+           break;
+
         default:
           //option = china_map(data.data)
           option = {
@@ -2154,6 +2159,85 @@ function heatmap(data, fd) {
 }
 
 
+//透视图
+function pivot_table(data, fd) {
+  var indicator = []
+  var series_data = []
+  var columns_data = []
+  var legend = []
+
+  //只有一个值的时候，不一样的。
+  if(data.columns.length == 1 ) {
+    verbose_map[fd.datasource][fd.all_columns_x]  || fd.all_columns_x
+    
+    legend.push(verbose_map[fd.datasource][fd.groupby[0]] || fd.groupby[0])
+    
+    columns_data.push({
+      name: legend[0],
+      value: [],
+    })
+
+    data.values.data.forEach(function(val, index, arr){
+      columns_data[0].value.push(val[0])
+    })
+
+  } else {
+
+    data.columns.forEach(function(val, index, arr){
+      var key = val.slice(1).join('.')
+      columns_data.push({
+        name: key,
+        value: []
+      })
+      legend.push(key)
+    })
+    
+    data.values.data.forEach(function(val, index, arr){
+      val.forEach(function(v, index, arr){
+         columns_data[index].value.push(v)
+      })
+    })
+  }
+
+  data.values.index.forEach(function(val, index, arr){
+    //以后可以改变max
+    indicator.push({'name':val, 'max': fd.radar_max_value})
+  })
+  
+  
+
+  var option = {
+      tooltip: {},
+      legend: {
+          top: '22',
+          left: '12%',
+          data: legend,
+      },
+      radar: {
+          // shape: 'circle',  图像弧度
+          radius: '65%',
+          center: ['50%', '55%'],
+          name: {
+              textStyle: {
+                  color: '#fff',
+                  backgroundColor: '#999',
+                  borderRadius: 3,
+                  padding: [3, 5]
+             }
+          },
+          indicator: indicator
+      },
+      series: [{
+          //name: '预算 vs 开销（Budget vs spending）',
+          type: 'radar',
+          // areaStyle: {normal: {}},
+          data : columns_data,
+      }]
+  };
+
+  console.log(option)
+  return option
+}
 
 //返回某一年的总天数  
 function GetYearDays(wYear) {
