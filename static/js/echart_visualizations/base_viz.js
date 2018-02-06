@@ -528,41 +528,42 @@ function generate_chart(mychart, data, slice_name) {
 //每个图形独立出来数据
 
 //非时间序列的柱状图数据
-function gene_bar_series(data, legend, type='bar', boundaryGap=true) {
-        var serie = [];
-        var areaStyle
-        var stack
-        if (type=='line' && !boundaryGap) {
-            areaStyle={normal:{}}
-            stack = '总量'
-        } else {
-            areaStyle={}
-            stack = undefined
+function gene_bar_series(data, legend, y_axis_format, type='bar', boundaryGap=true) {
+    console.log(y_axis_format)
+    var serie = [];
+    var areaStyle
+    var stack
+    if (type=='line' && !boundaryGap) {
+        areaStyle={normal:{}}
+        stack = '总量'
+    } else {
+        areaStyle={}
+        stack = undefined
+    }
+    data.forEach(function(val,index,arr){
+        var item = {
+            name:legend[index],
+            type: type,
+            barMaxWidth: 60,
+            barGap: "10%",
+            areaStyle:areaStyle,
+            stack:stack,
+            data: val,
         }
-        data.forEach(function(val,index,arr){
-            var item = {
-                name:legend[index],
-                type: type,
-                barMaxWidth: 60,
-                barGap: "10%",
-                areaStyle:areaStyle,
-                stack:stack,
-                data: val,
-            }
 
-            //叠加状态 最后一个显示总数
-            if (index == data.length -1 && stack !== undefined) {
-                item.label = {
-                    normal: {
-                        show: true,
-                        position: 'top'
-                    }
+        //叠加状态 最后一个显示总数
+        if (index == data.length -1 && stack !== undefined) {
+            item.label = {
+                normal: {
+                    show: true,
+                    position: 'top'
                 }
             }
+        }
 
-            serie.push(item);
-        })
-        return serie
+        serie.push(item);
+    })
+    return serie
 }
 
 
@@ -640,7 +641,11 @@ function dist_bar_viz(data, fd) {
             trigger: 'axis',
             axisPointer : {            // 坐标轴指示器，坐标轴触发有效
                 type : 'shadow'        // 默认为直线，可选为：'line' | 'shadow'
-            }
+            },
+            // formatter:function(data,value, dataIndex){
+            //   console.log(data)
+            //   return axisLabel_formatter(value, dataIndex, fd.y_axis_format) 
+            // }, 
         },
         xAxis : [
             {
@@ -658,7 +663,7 @@ function dist_bar_viz(data, fd) {
                 }
             }
         ],
-        series : gene_bar_series(values, legend)
+        series : gene_bar_series(values, legend, fd.y_axis_format)
     }
 
     return option
@@ -733,9 +738,17 @@ function time_line_viz(data, fd, boundaryGap=true) {
                 }
             }
         ],
-        series : gene_bar_series(values, legend, type='line', boundaryGap=boundaryGap)
+        series : gene_bar_series(values, legend, fd.y_axis_format, type='line', boundaryGap=boundaryGap)
     }
 
+    //console.log('max_min:',  fd.y_axis_bounds)
+
+    if (fd.y_axis_bounds[0] !== undefined) {
+      option.yAxis[0]['min'] = fd.y_axis_bounds[0]
+    }
+    if (fd.y_axis_bounds[1] !== undefined) {
+      option.yAxis[0]['max'] = fd.y_axis_bounds[1]
+    }
     return option
 }
 
@@ -1107,7 +1120,7 @@ function treemap(data, table_id) {
     data[0]['name'] = verbose_map[table_id][series_name] || series_name
     data[0] = calcule_treemap_total(data[0], data[0].children)
     
-    console.log('trese', data[0])
+    //console.log('trese', data[0])
 
     option = {
         tooltip : {},
@@ -1225,7 +1238,7 @@ function box_plot(data, fd) {
             data: outliers
         }]
     }
-    console.log('box:', option)
+    //console.log('box:', option)
     return option
 
 }
@@ -1549,7 +1562,7 @@ function regression(data, fd) {
     var myRegression = ecStat.regression(fd.stat_function, values)
   } else {
     //多项式多number参数
-    console.log(fd.other.type)
+    //console.log(fd.other.type)
     var myRegression = ecStat.regression(fd.stat_function, values, Number(fd.stat_number))
   }
   
@@ -1697,7 +1710,7 @@ function sunburst(data, fd) {
 
    })
    
-   console.log(values[1])
+   //console.log(values[1])
    //console.log(values[1].sort())
 
    //转换为符合echart格式
@@ -2235,7 +2248,7 @@ function pivot_table(data, fd) {
       }]
   };
 
-  console.log(option)
+  //console.log(option)
   return option
 }
 
@@ -2275,10 +2288,11 @@ function numberToDatetime(date, type='datetime'){
 function axisLabel_formatter(value, index, data_form) {
     // 格式化刻度显示
     var text
+    //console.log('form', data_form)
     switch (data_form) {
       case '.3s':
         if (parseInt(value)==value) {
-          // 是否为整数
+          // 是否整数大于3位数
           if(value < 1000) {
             text = value.toString()
           } else {
@@ -2286,8 +2300,9 @@ function axisLabel_formatter(value, index, data_form) {
           }
           
         } else {
+          //有小数
           if(value < 1000) {
-              text = value.toFixed(1)
+              text = Number(value).toFixed(1)
           } else {
             text = (value / 1000).toFixed(1) + 'K'  
           }
@@ -2308,9 +2323,10 @@ function axisLabel_formatter(value, index, data_form) {
 
       // break
 
-      // case '.3%':
-
-      // break
+      case '.3%':
+        text = Number(value).toFixed(4) * 100
+        text = text.toString() + '%'
+      break
 
       default:
       text = value
