@@ -40,8 +40,7 @@ var filter_form = {}
 var time_filter = {}
 
 //排序函数
-function sortNumber(a,b)
-{
+function sortNumber(a,b){
   return a - b
 }
 
@@ -429,6 +428,10 @@ function generate_chart(mychart, data, slice_name) {
            option = pivot_table(data.data, data.form_data)
            break;
 
+        case 'dual_line':
+           option = dual_line(data.data, data.form_data)
+           break;
+
         default:
           //option = china_map(data.data)
           option = {
@@ -529,7 +532,7 @@ function generate_chart(mychart, data, slice_name) {
 
 //非时间序列的柱状图数据
 function gene_bar_series(data, legend, y_axis_format, type='bar', boundaryGap=true) {
-    console.log(y_axis_format)
+    //console.log(y_axis_format)
     var serie = [];
     var areaStyle
     var stack
@@ -2062,11 +2065,14 @@ function parallel(data, fd) {
         legend:{
             top: '15',
             left: '12%',
-            data: legend
+            data: legend,
         },
         series: series,
     }
 
+    if (!fd.show_legend) {
+       option.legend['show'] = false
+    }
     return option
 }
 
@@ -2243,13 +2249,106 @@ function pivot_table(data, fd) {
       series: [{
           //name: '预算 vs 开销（Budget vs spending）',
           type: 'radar',
-          // areaStyle: {normal: {}},
+          areaStyle: {normal: {}}, //填充图形颜色
           data : columns_data,
       }]
   };
 
   //console.log(option)
   return option
+}
+
+
+//双坐标
+function dual_line(data, fd) {
+    var option = {}
+    var series = []
+    var table_id = fd.datasource
+
+    var tmp_values = []
+    var legend = []
+    var xAxis_values = []
+
+    //双坐标只有两组数据
+    data[0].values.forEach(function(v,i, arr){
+        tmp_values.push(v.y)
+        if (fd.granularity_sqla == undefined) {
+          xAxis_values.push(v.x)
+        } else {
+          xAxis_values.push(numberToDatetime(v.x))
+        }
+        
+    })
+
+    legend.push(verbose_map[table_id][data[0].key] || data[0].key)
+
+    series.push({
+      name:[verbose_map[table_id][data[0].key] || data[0].key],
+      type: 'bar',
+      barMaxWidth: 60,
+      barGap: "10%",
+      yAxisIndex: 0,
+      data: tmp_values,
+    })
+
+    tmp_values = []
+
+    data[1].values.forEach(function(v,i, arr){
+        tmp_values.push(v.y)
+    })
+
+    legend.push(verbose_map[table_id][data[1].key] || data[1].key)
+
+    series.push({
+      name:[verbose_map[table_id][data[1].key] || data[1].key],
+      type: 'line',
+      yAxisIndex: 1,
+      data: tmp_values,
+    })
+
+    option = {
+        legend:{
+            left: '15%',
+            top: 24,
+            data: legend,
+        },
+        tooltip : {
+            left:'95%',
+            trigger: 'axis',
+            axisPointer : {            // 坐标轴指示器，坐标轴触发有效
+                type : 'shadow'        // 默认为直线，可选为：'line' | 'shadow'
+            },
+        },
+        xAxis : [
+            {
+                type : 'category',
+                data : xAxis_values
+            }
+        ],
+        yAxis : [
+            {
+                type : 'value',
+                position: 'left',
+                axisLabel: {
+                  formatter: function(value, index){
+                    return axisLabel_formatter(value, index, fd.y_axis_format) 
+                  }
+                }
+            },
+            {
+                type : 'value',
+                position: 'right',
+                axisLabel: {
+                  formatter: function(value, index){
+                    return axisLabel_formatter(value, index, fd.y_axis_format) 
+                  }
+                }
+            }
+        ],
+        series : series
+    }
+
+    return option
 }
 
 //返回某一年的总天数  
@@ -2284,7 +2383,6 @@ function numberToDatetime(date, type='datetime'){
 
 
 //坐标轴的显示
-
 function axisLabel_formatter(value, index, data_form) {
     // 格式化刻度显示
     var text
