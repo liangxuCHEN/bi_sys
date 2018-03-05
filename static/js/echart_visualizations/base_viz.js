@@ -356,7 +356,7 @@ function generate_chart(mychart, data, slice_name) {
           option = time_line_viz(data.data, data.form_data, boundaryGap=false)
           break;
         case 'pie':
-          option = pie_viz(data.data)
+          option = pie_viz(data.data, data.form_data)
           break;
         case 'country_map':
           if (data.form_data.stat_unit == 'city') {
@@ -571,7 +571,7 @@ function gene_bar_series(data, legend, y_axis_format, type='bar', boundaryGap=tr
 
 
 //饼图
-function pie_viz(data) {
+function pie_viz(data,fd) {
     // 数据适配echart格式
     var option = {}
     var values = []
@@ -593,6 +593,7 @@ function pie_viz(data) {
         },
         tooltip : {
             trigger: 'item',
+            formatter: "{b} : {c} ({d}%)"
         },
         series: {
             type: 'pie',
@@ -601,6 +602,7 @@ function pie_viz(data) {
             data: values,
             itemStyle: {
                 emphasis: {
+                    borderWidth: 2,
                     shadowBlur: 10,
                     shadowOffsetX: 0,
                     shadowColor: 'rgba(0, 0, 0, 0.5)'
@@ -608,6 +610,13 @@ function pie_viz(data) {
             }
         }
     }
+
+    if (!fd.show_legend) {
+       option.legend['show'] = false
+       option.series['labelLine'] = {'normal':{'show': false}}
+       option.series['label'] = {'normal':{'show': false}}
+    }
+
     return option
 }    
 
@@ -667,6 +676,10 @@ function dist_bar_viz(data, fd) {
             }
         ],
         series : gene_bar_series(values, legend, fd.y_axis_format)
+    }
+
+    if (!fd.show_legend) {
+       option.legend['show'] = false
     }
 
     return option
@@ -752,6 +765,10 @@ function time_line_viz(data, fd, boundaryGap=true) {
     if (fd.y_axis_bounds[1] !== undefined) {
       option.yAxis[0]['max'] = fd.y_axis_bounds[1]
     }
+    if (!fd.show_legend) {
+       option.legend['show'] = false
+    }
+
     return option
 }
 
@@ -1242,6 +1259,9 @@ function box_plot(data, fd) {
         }]
     }
     //console.log('box:', option)
+    if (!fd.show_legend) {
+       option.legend['show'] = false
+    }
     return option
 
 }
@@ -1365,9 +1385,9 @@ function bubble(data, fd) {
         
     option = {
         legend:{
-            data: legend,
-            top: '15',
-            left: '12%',
+          data: legend,
+          top: '15',
+          left: '12%',
         },
         tooltip: {
             trigger: 'item',
@@ -1376,43 +1396,44 @@ function bubble(data, fd) {
             borderColor: '#777',
             borderWidth: 1,
             formatter: function (obj) {
-                var value
-                var series_name
-                if(obj.value == undefined) {
-                  value = obj[0].value
-                  series_name = obj[0].seriesName
-                } else {
-                  value = obj.value
-                  series_name = obj.seriesName
-                }
-                  
-                return '<div style="border-bottom: 1px solid rgba(255,255,255,.3); font-size: 18px;padding-bottom: 7px;margin-bottom: 7px">'
-                    + value[3] + ' (' + series_name + ')'
-                    + '</div>'
-                    + schema[0].text + '：' + value[0] + '<br>'
-                    + schema[1].text + '：' + value[1] + '<br>'
-                    + schema[2].text + '：' + value[2] + '<br>';
-            }
+              var value
+              var series_name
+              if(obj.value == undefined) {
+                value = obj[0].value
+                series_name = obj[0].seriesName
+              } else {
+                value = obj.value
+                series_name = obj.seriesName
+              }
+                
+              return '<div style="border-bottom: 1px solid rgba(255,255,255,.3); font-size: 18px;padding-bottom: 7px;margin-bottom: 7px">'
+                  + value[3] + ' (' + series_name + ')'
+                  + '</div>'
+                  + schema[0].text + '：' + value[0] + '<br>'
+                  + schema[1].text + '：' + value[1] + '<br>'
+                  + schema[2].text + '：' + value[2] + '<br>';
+          }
         },
 
         xAxis: {
-            type: 'value',
-            name: schema[0].text
+          type: 'value',
+          name: schema[0].text
         },
         yAxis: {
-            type: 'value',
-            name: schema[1].text,
-            axisLabel: {
-              formatter: function(value, index){
-                return axisLabel_formatter(value, index, fd.y_axis_format) 
-              }
+          type: 'value',
+          name: schema[1].text,
+          axisLabel: {
+            formatter: function(value, index){
+              return axisLabel_formatter(value, index, fd.y_axis_format) 
             }
+          }
         },
         series : series,
-
     }
 
-    //console.log(series)
+    if (!fd.show_legend) {
+       option.legend['show'] = false
+    }
     return option
 }
 
