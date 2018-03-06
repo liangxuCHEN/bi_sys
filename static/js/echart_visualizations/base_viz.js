@@ -38,10 +38,26 @@ const time_grain = [
 var filter_paramets = []
 var filter_form = {}
 var time_filter = {}
-
+var fravstar_action = 'select'
 //排序函数
 function sortNumber(a,b){
   return a - b
+}
+
+//收藏　TODO:换成图标－空心和实心星星
+function fravstar(object_id){
+  $.get('/superset/favstar/Dashboard/'+object_id+'/'+fravstar_action).done(function(response){
+    if (fravstar_action == 'select') {
+      alert('收藏成功')
+      $('#fravstar').text('取消收藏')
+      fravstar_action = 'unselect'
+    } else {
+      alert('取消收藏成功')
+      fravstar_action = 'select'
+      $('#fravstar').text('收藏')
+    }
+  })
+    
 }
 
  if (current_url.indexOf('?') > -1){
@@ -101,7 +117,10 @@ function read_dashboard(dashboard_id) {
         }
 
         //标题
-        $(dashboard_title_id).append('<h2  style="margin-left: 10px">'+response.dashboard.dashboard_title+'</h2>')
+        $(dashboard_title_id).append('<h2  style="margin-left: 10px">'
+          +response.dashboard.dashboard_title
+          +'<small id="fravstar" onclick=fravstar('+response.dashboard.id
+          +')><span class="glyphicon glyphicon-scissors" aria_hidden="true"></span>收藏</small></h2>')
 
         //每个slice
         response.dashboard.slices.forEach(function(val,index, arr){
@@ -148,7 +167,7 @@ function read_dashboard(dashboard_id) {
             //TODO:这里是异步请求，放回数据有先后，顺势有区别，需要用postition来调整参数
             verbose_map =  response.verbose_map
 
-            add_slice(position, url, val.slice_name, slice_width_unit)
+            add_slice(position, url, val.slice_name, val.description, slice_width_unit)
         })
    }).fail(function(){
      $(dashboard_title_id).append('<div class="alert alert-warning" role="alert">数据加载失败</div>')
@@ -156,7 +175,7 @@ function read_dashboard(dashboard_id) {
 }
 
 
-function add_slice(position, url, slice_name, slice_width_unit) {
+function add_slice(position, url, slice_name, description, slice_width_unit) {
   
     //console.log(response)
     var slice_id = 'slice_cell' + position['slice_id']
@@ -215,7 +234,7 @@ function add_slice(position, url, slice_name, slice_width_unit) {
               // 高度留一点空隙
               $('#'+slice_id).css("margin-top", "5px")
               var myChart= echarts.init(document.getElementById(slice_id), chart_style)
-              generate_chart(myChart, response,　slice_name)
+              generate_chart(myChart, response,　slice_name, description)
         }
 
     }).fail(function(){
@@ -334,7 +353,7 @@ function generate_table(response,　slice_name, pageSize) {
 }
 
 //基本柱状图数据
-function generate_chart(mychart, data, slice_name) {
+function generate_chart(mychart, data, slice_name, description) {
     //构建图表
     var option
 
@@ -443,19 +462,35 @@ function generate_chart(mychart, data, slice_name) {
 
             }
           }
-          console.log('pass')
+          console.log('without type viz, and pass')
     }
 
     //图表共同参数的设置
     if (option.title == undefined) {
-            option.title = {
-            //标题
-            text: slice_name,
-            textAlign: 'left',
+          option.title = {
+          //标题
+          text: slice_name,
+          textAlign: 'left',
 
+        }
+
+        //副标题和图例显示位置
+        if (description) {
+          option.title['subtext'] =  description
+          if (option.legend !== undefined) {
+            option.legend['top'] = 50
+            option.legend['left'] = '15%'
+          }
+        } else {
+          if (option.legend !== undefined) {
+            option.legend['top'] = 24
+            option.legend['left'] = '15%'
+          }
         }
     }
 
+
+    //图标工具栏
     option.toolbox = {  
         show : true,
         left: '85%',
@@ -466,6 +501,13 @@ function generate_chart(mychart, data, slice_name) {
         }  
     }
 
+    //图形显示区域大小和位置
+    option['grid'] = {
+      top: 100,
+      bottom: 100,
+    }
+
+    //图标个性参数
     switch(data.form_data.viz_type)
     {
         case 'dist_bar':
@@ -586,10 +628,7 @@ function pie_viz(data,fd) {
     option = {
         legend:{
             //orient: 'vertical',
-            left: '15%',
-            top: 24,
             data: legend,
-
         },
         tooltip : {
             trigger: 'item',
@@ -644,8 +683,6 @@ function dist_bar_viz(data, fd) {
         legend:{
             //orient: 'horizontal',
             //type: 'scroll',
-            left: '15%',
-            top: 24,
             data: legend,
         },
         tooltip : {
@@ -718,10 +755,6 @@ function time_line_viz(data, fd, boundaryGap=true) {
     })
     option = {
         legend:{
-            //orient: 'horizontal',
-            //type: 'scroll',
-            left: '15%',
-            top: 24,
             data: legend,
         },
         grid: {
@@ -1259,9 +1292,7 @@ function box_plot(data, fd) {
         }]
     }
     //console.log('box:', option)
-    if (!fd.show_legend) {
-       option.legend['show'] = false
-    }
+
     return option
 
 }
@@ -1386,8 +1417,6 @@ function bubble(data, fd) {
     option = {
         legend:{
           data: legend,
-          top: '15',
-          left: '12%',
         },
         tooltip: {
             trigger: 'item',
@@ -1523,8 +1552,6 @@ function clustering(data, fd) {
   var option = {
         legend: {
           data: legend,
-          top: '15',
-          left: '12%',
         },
         tooltip: {
             trigger: 'axis',
@@ -2084,8 +2111,6 @@ function parallel(data, fd) {
             }
         },
         legend:{
-            top: '15',
-            left: '12%',
             data: legend,
         },
         series: series,
@@ -2249,8 +2274,6 @@ function pivot_table(data, fd) {
   var option = {
       tooltip: {},
       legend: {
-          top: '22',
-          left: '12%',
           data: legend,
       },
       radar: {
@@ -2329,8 +2352,6 @@ function dual_line(data, fd) {
 
     option = {
         legend:{
-            left: '15%',
-            top: 24,
             data: legend,
         },
         tooltip : {
@@ -2443,7 +2464,8 @@ function axisLabel_formatter(value, index, data_form) {
       // break
 
       case '.3%':
-        text = Number(value).toFixed(4) * 100
+        text = Number(value)* 100
+        text = text.toFixed(3) 
         text = text.toString() + '%'
       break
 
