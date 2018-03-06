@@ -38,7 +38,7 @@ const time_grain = [
 var filter_paramets = []
 var filter_form = {}
 var time_filter = {}
-var fravstar_action = 'select'
+var fravstar_action = 'count'
 //排序函数
 function sortNumber(a,b){
   return a - b
@@ -49,12 +49,20 @@ function fravstar(object_id){
   $.get('/superset/favstar/Dashboard/'+object_id+'/'+fravstar_action).done(function(response){
     if (fravstar_action == 'select') {
       alert('收藏成功')
-      $('#fravstar').text('取消收藏')
+      $('#fravstar').removeClass("glyphicon-heart-empty").addClass('glyphicon-heart')
       fravstar_action = 'unselect'
-    } else {
+    } else if(fravstar_action == 'unselect') {
       alert('取消收藏成功')
       fravstar_action = 'select'
-      $('#fravstar').text('收藏')
+      $('#fravstar').removeClass("glyphicon-heart").addClass('glyphicon-heart-empty')
+    } else {
+      //初始化，看是否已经收藏
+      if (response.count == 0) {
+        fravstar_action = 'select'
+      } else {
+        $('#fravstar').removeClass("glyphicon-heart-empty").addClass('glyphicon-heart')
+        fravstar_action = 'unselect'
+      }
     }
   })
     
@@ -119,8 +127,11 @@ function read_dashboard(dashboard_id) {
         //标题
         $(dashboard_title_id).append('<h2  style="margin-left: 10px">'
           +response.dashboard.dashboard_title
-          +'<small id="fravstar" onclick=fravstar('+response.dashboard.id
-          +')><span class="glyphicon glyphicon-scissors" aria_hidden="true"></span>收藏</small></h2>')
+          +'<span id="fravstar" class="glyphicon glyphicon-heart-empty" aria_hidden="true" onclick=fravstar('
+          +response.dashboard.id+')></span></h2>')
+
+        //是否已经收藏
+        fravstar(response.dashboard.id)
 
         //每个slice
         response.dashboard.slices.forEach(function(val,index, arr){
