@@ -386,7 +386,11 @@ function generate_chart(mychart, data, slice_name, description) {
           option = time_line_viz(data.data, data.form_data, boundaryGap=false)
           break;
         case 'pie':
-          option = pie_viz(data.data, data.form_data)
+          if (data.form_data.is_funnel) {
+            option = funnel_viz(data.data, data.form_data)
+          } else {
+            option = pie_viz(data.data, data.form_data)
+          }
           break;
         case 'country_map':
           if (data.form_data.stat_unit == 'city') {
@@ -502,13 +506,23 @@ function generate_chart(mychart, data, slice_name, description) {
 
 
     //图标工具栏
-    option.toolbox = {  
+    option.toolbox = {
         show : true,
         left: '85%',
-        feature : {  
+        feature : {
+           //dataView : {show: true, readOnly: true}, //显示数据
            saveAsImage: {show: true, title:'下载'},
            restore: {show: true},
            //dataZoom: {show: true}, //地图，热力图
+           myTool : {
+                show : true,
+                title : '自定义扩展方法',
+                //path=svg, image=url
+                icon : 'path://M249.856 389.12v-178.176c0-45.056 36.864-81.92 81.92-81.92h456.704l163.84 167.936v337.92c0 12.288-8.192 20.48-20.48 20.48s-20.48-8.192-20.48-20.48V337.92h-102.4c-34.816 0-61.44-26.624-61.44-61.44v-106.496h-415.744c-22.528 0-40.96 18.432-40.96 40.96v178.176h456.704c22.528 0 40.96 18.432 40.96 40.96v286.72c0 22.528-18.432 40.96-40.96 40.96h-456.704v61.44c0 22.528 18.432 40.96 40.96 40.96h538.624c22.528 0 40.96-18.432 40.96-40.96v-61.44c0-12.288 8.192-20.48 20.48-20.48s20.48 8.192 20.48 20.48v61.44c0 45.056-36.864 81.92-81.92 81.92h-538.624c-45.056 0-81.92-36.864-81.92-81.92v-61.44h-137.216c-22.528 0-40.96-18.432-40.96-40.96v-286.72c0-22.528 18.432-40.96 40.96-40.96h137.216z m538.624-202.752v90.112c0 10.24 8.192 20.48 20.48 20.48h86.016l-106.496-110.592z m-473.088 350.208c-14.336-38.912-40.96-57.344-83.968-59.392-59.392 4.096-90.112 36.864-94.208 102.4 2.048 65.536 34.816 100.352 94.208 102.4 47.104 0 77.824-22.528 88.064-67.584l-36.864-12.288c-4.096 32.768-22.528 47.104-49.152 47.104-34.816-2.048-53.248-26.624-55.296-71.68 2.048-45.056 20.48-67.584 55.296-69.632 24.576 2.048 40.96 14.336 47.104 36.864l34.816-8.192z m26.624 79.872c10.24 45.056 38.912 65.536 90.112 65.536s75.776-20.48 77.824-59.392c0-24.576-14.336-40.96-40.96-53.248l-36.864-12.288c-28.672-6.144-43.008-16.384-40.96-28.672 2.048-16.384 14.336-22.528 34.816-24.576 24.576 0 38.912 10.24 43.008 32.768l36.864-8.192c-6.144-36.864-34.816-57.344-81.92-55.296-45.056 2.048-69.632 20.48-71.68 53.248-2.048 28.672 16.384 47.104 57.344 57.344 10.24 2.048 20.48 4.096 30.72 8.192 22.528 6.144 32.768 16.384 30.72 30.72-2.048 18.432-14.336 26.624-38.912 28.672-28.672 0-47.104-14.336-51.2-45.056l-38.912 10.24z m380.928-137.216h-40.96l-49.152 145.408c-4.096 12.288-6.144 18.432-6.144 20.48 0-4.096-2.048-10.24-6.144-20.48l-51.2-147.456h-40.96l77.824 198.656h43.008l73.728-196.608z',  
+                onclick : function (){
+                    alert('自定义扩展方法')
+                }
+            },
         }  
     }
 
@@ -626,7 +640,6 @@ function gene_bar_series(data, legend, y_axis_format, type='bar', boundaryGap=tr
 //饼图
 function pie_viz(data,fd) {
     // 数据适配echart格式
-    var option = {}
     var values = []
     var legend = []
     data.forEach(function(val,index, arr){
@@ -636,16 +649,16 @@ function pie_viz(data,fd) {
        })
        legend.push(val.x)        
     })
-    option = {
-        legend:{
+    var option = {
+          legend:{
             //orient: 'vertical',
             data: legend,
-        },
-        tooltip : {
+          },
+          tooltip : {
             trigger: 'item',
             formatter: "{b} : {c} ({d}%)"
-        },
-        series: {
+          },
+          series: {
             type: 'pie',
             radius : '55%',
             center: ['50%', '60%'],
@@ -658,8 +671,8 @@ function pie_viz(data,fd) {
                     shadowColor: 'rgba(0, 0, 0, 0.5)'
                 }
             }
-        }
-    }
+          }
+      }
 
     if (!fd.show_legend) {
        option.legend['show'] = false
@@ -670,6 +683,68 @@ function pie_viz(data,fd) {
     return option
 }    
 
+//漏斗图
+function funnel_viz(data, fd) {
+  // 数据适配echart格式
+    var values = []
+    var legend = []
+    data.forEach(function(val,index, arr){
+       values.push({
+            'value':val.y,
+            'name': val.x
+       })
+       legend.push(val.x)        
+    })
+
+    var option = {
+      legend:{
+          //orient: 'vertical',
+          data: legend,
+      },
+      tooltip : {
+          trigger: 'item',
+          formatter: "{b} : {c} ({d}%)"
+      },
+      calculable: true,
+      series: {
+          type: 'funnel',
+          // min: 0,
+          // max: 100,
+          minSize: '0%',
+          maxSize: '100%',
+          sort: 'descending',
+          gap: 2,
+          width: '70%',
+          data: values,
+          itemStyle: {
+              emphasis: {
+                  borderWidth: 2,
+                  shadowBlur: 10,
+                  shadowOffsetX: 0,
+                  shadowColor: 'rgba(0, 0, 0, 0.5)'
+              }
+          },
+          label: {
+              normal: {
+                  show: true,
+                  position: 'inside'
+              },
+              emphasis: {
+                  textStyle: {
+                      fontSize: 20
+                  }
+              }
+          },
+      }
+    }
+
+    if (!fd.show_legend) {
+       option.legend['show'] = false
+       option.series.label.normal['show'] = false
+    }
+
+    return option
+}
 
 //柱状图
 function dist_bar_viz(data, fd) {
@@ -2288,24 +2363,31 @@ function pivot_table(data, fd) {
           data: legend,
       },
       radar: {
-          // shape: 'circle',  图像弧度
+          shape: 'circle',  //图像弧度
           radius: '65%',
           center: ['50%', '55%'],
           name: {
               textStyle: {
                   color: '#fff',
                   backgroundColor: '#999',
-                  borderRadius: 3,
+                  borderRadius: 6,
                   padding: [3, 5]
              }
           },
           indicator: indicator
       },
       series: [{
-          //name: '预算 vs 开销（Budget vs spending）',
           type: 'radar',
-          areaStyle: {normal: {}}, //填充图形颜色
+          //areaStyle: {normal: {}}, //填充图形颜色
           data : columns_data,
+          itemStyle: {
+            normal:{
+              lineStyle:{width: 4},
+            },
+            emphasis:{
+              areaStyle:{color:'rgba(0,250,0,0.3)'}  //鼠标移动过去显示
+            }
+          }
       }]
   };
 
