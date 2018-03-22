@@ -1,5 +1,5 @@
-const base_dashboard_url = '/superset/dashboard_json/'
-const base_slice_url = '/superset/explore_json/table/'
+const base_dashboard_url = 'http://192.168.0.94/superset/dashboard_json/'
+const base_slice_url = 'http://192.168.0.94/superset/explore_json/table/'
 
 const dashboard_title_id = '#dashboard_title'
 const dashboard_content_id = '#data_dash'
@@ -12,8 +12,9 @@ const background_color = "#333"
 const colors=['#fad797','#59ccf7','#c3b4df']
 
 //echart风格
-const chart_style = 'dark' //html要相应引入主题js文件
+var chart_style = 'dark' //html要相应引入主题js文件
 
+var echart_dict = {}  //存放echart实例
 
 //TODO: 拆分一下不同参数
 const current_url = decodeURI(window.location.href)
@@ -38,13 +39,13 @@ const time_grain = [
 var filter_paramets = []
 var filter_form = {}
 var time_filter = {}
-var fravstar_action = 'count'
+var fravstar_action = 'count'  //初始化判断是否已经收藏
 //排序函数
 function sortNumber(a,b){
   return a - b
 }
 
-//收藏　TODO:换成图标－空心和实心星星
+//收藏
 function fravstar(object_id){
   $.get('/superset/favstar/Dashboard/'+object_id+'/'+fravstar_action).done(function(response){
     if (fravstar_action == 'select') {
@@ -74,28 +75,28 @@ function fravstar(object_id){
         var v = val.split('=')
 
         if (v[1] !== '') {
-            //不是时间参数,暂时单选
-            //TODO: 多选
-            if (v[0]!=='since' && v[0]!=='until' && v[0]!=='time_grain_sqla') {
-                filter_paramets.push({
-                  col:v[0],
-                  op:"in",
-                  val:[v[1]]
-              })
-              filter_form[v[0]] = v[1]
-            } else {
-              //时间参数
-              //console.log('time filter', v)
-              time_filter[v[0]] = v[1]
-            }
-            
-        }
+
+          //不是时间参数,暂时单选
+          //TODO: 多选
+          if (v[0]!=='since' && v[0]!=='until' && v[0]!=='time_grain_sqla') {
+            filter_paramets.push({
+                col:v[0],
+                op:"in",
+                val:[v[1]]
+            })
+            filter_form[v[0]] = v[1]
+          } else {
+            //时间参数
+            //console.log('time filter', v)
+            time_filter[v[0]] = v[1]
+          }
+      }
         
     })
  }
 
-function read_dashboard(dashboard_id) {
-     
+function read_dashboard(dashboard_id, force_refresh=false, interval=0) {
+    console.log(force_refresh, interval)
     var get_dashboat_url
 
     var slice_width_unit = Math.floor(document.documentElement.clientWidth / 12) - 1
@@ -107,11 +108,11 @@ function read_dashboard(dashboard_id) {
         $(dashboard_title_id).children().remove()
 
         //访问禁止
-        if (response.dashboard == undefined) {
-          alert("没有权限访问，请联系管理员"); 
-          window.location.href="/superset/welcome"
-          return
-        }
+        // if (response.dashboard == undefined) {
+        //   alert("没有权限访问，请联系管理员"); 
+        //   window.location.href="/superset/welcome"
+        //   return
+        // }
         //权限问题提醒
         if (response.dashboard.status == 401) {
             $(dashboard_title_id).append('<div class="alert alert-warning" role="alert">'+ response.dashboard.message +'<a href="/superset/welcome"> 返回首页</a></div>')
@@ -125,13 +126,35 @@ function read_dashboard(dashboard_id) {
         }
 
         //标题
-        $(dashboard_title_id).append('<h2  style="margin-left: 10px">'
-          +response.dashboard.dashboard_title
-          +'<span id="fravstar" class="glyphicon glyphicon-heart-empty" aria_hidden="true" onclick=fravstar('
-          +response.dashboard.id+')></span></h2>')
+        $(dashboard_title_id).append('<h2 style="margin-left:10px">'
+          + response.dashboard.dashboard_title
+          + '<span class="glyphicon glyphicon-heart-empty" aria-hidden="true" id="fravstar" onclick="fravstar('
+          + response.dashboard.id+ ')"></span>'
+          + '<div class="pull-right" id="control_menu"> </div></h2>')
+        
+        //右边控制工具
+        //TODO: 添加权限显示
+        //强制新的刷新, 清除echart
 
-        //是否已经收藏
-        fravstar(response.dashboard.id)
+        $('#control_menu').append('<button type="button" class="btn btn-default" id="force_refresh" onclick="read_dashboard('
+          + response.dashboard.id + ',force_refresh=true)"><span class="glyphicon glyphicon-refresh" aria-hidden="true"></span></button>')
+
+        //TODO:弹出框来设置定时刷新 改interval的值
+        $('#control_menu').append('<button type="button" class="btn btn-default" id="auto_refresh" onclick="read_dashboard('
+          + response.dashboard.id + ',force_refresh=true, interval=5000)"><span class="glyphicon glyphicon-time" aria-hidden="true"></span></button>')
+        
+        //stop 定时刷新 TODO 看能不能停掉setTimeout     
+        $('#control_menu').append('<button type="button" class="btn btn-default" id="stop_refresh" onclick="location.reload()"><span class="glyphicon glyphicon-ban-circle" aria-hidden="true"></span></button>')      
+
+        //首次加载是否已经收藏
+        if (fravstar_action == 'count'){
+          fravstar(response.dashboard.id)  
+        } else {
+          // if unselect , 代表已经收藏, 默认值是没有收藏,就不用改
+          if(fravstar_action == 'unselect') {
+             $('#fravstar').removeClass("glyphicon-heart-empty").addClass('glyphicon-heart')
+          }
+        }
 
         //每个slice
         response.dashboard.slices.forEach(function(val,index, arr){
@@ -170,23 +193,41 @@ function read_dashboard(dashboard_id) {
               }
 
             }
-            
+
 
             var url = base_slice_url + table_id  + '?form_data=' + JSON.stringify(val.form_data)
 
+            
             //console.log(url)
-            //TODO:这里是异步请求，放回数据有先后，顺势有区别，需要用postition来调整参数
+            //TODO:这里是异步请求，放回数据有先后，移动端有区别，需要用postition来调整参数
             verbose_map =  response.verbose_map
-
-            add_slice(position, url, val.slice_name, val.description, slice_width_unit)
+            if(interval>0){
+              setTimeout(
+                 add_slice(position, url, val.slice_name, val.description, slice_width_unit, force_refresh),
+                 interval+index*300  
+              )
+            } else {
+              add_slice(position, url, val.slice_name, val.description, slice_width_unit, force_refresh)
+            }
+            
+            
         })
    }).fail(function(){
      $(dashboard_title_id).append('<div class="alert alert-warning" role="alert">数据加载失败</div>')
    })
+
+   //定时刷新
+   if (interval>0) {
+      setTimeout(
+        function(){read_dashboard(dashboard_id, force_refresh=force_refresh, interval=interval)},
+        interval
+      )
+   }
+   
 }
 
 
-function add_slice(position, url, slice_name, description, slice_width_unit) {
+function add_slice(position, url, slice_name, description, slice_width_unit, force_refresh) {
   
     //console.log(response)
     var slice_id = 'slice_cell' + position['slice_id']
@@ -194,41 +235,52 @@ function add_slice(position, url, slice_name, description, slice_width_unit) {
     var slice_width = slice_width_unit * position['size_x']
     var slice_top = slice_height_unit  * position['row'] + 98
     var slice_left = slice_width_unit * (position['col'] - 1) + 5
-    
-    $.get(url).done(function (response) {
+
+     //是否强制刷新
+    var temp_url = url
+    if (force_refresh) {
+      temp_url += '&force=true' 
+    }
+        
+    $.get(temp_url).done(function (response) {
 
         console.log(response)
         
         //全屏定位
         //移动端定位-每个图一栏
-        if (document.documentElement.clientWidth > 600) {
-            $(dashboard_content_id).append('<div style="position: absolute;width:'+
-                slice_width+'px;height:'+
-                slice_height+'px;left:'+
-                slice_left+'px;top:'+
-                slice_top+'px;"><div id="'+
-                slice_id +'" style="height:'+
-                (slice_height-2)+'px;width:'+
-                (slice_width-2)+'px;"></div></div>'
-            )
-        } else {
-            $(dashboard_content_id).append('<div class="row" style="margin: 1px 5px 1px 5px"><div id="'+
-                slice_id +'" style="height:'+
-                (slice_height-2)+'px;"></div></div>'
-            )
-        }
+        if(!force_refresh) {
+          //新的要加div
+          if (document.documentElement.clientWidth > 600) {
+              $(dashboard_content_id).append('<div style="position: absolute;width:'+
+                  slice_width+'px;height:'+
+                  slice_height+'px;left:'+
+                  slice_left+'px;top:'+
+                  slice_top+'px;"><div id="'+
+                  slice_id +'" style="height:'+
+                  (slice_height-2)+'px;width:'+
+                  (slice_width-2)+'px;"></div></div>'
+              )
+          } else {
+              $(dashboard_content_id).append('<div class="row" style="margin: 1px 5px 1px 5px"><div id="'+
+                  slice_id +'" style="height:'+
+                  (slice_height-2)+'px;"></div></div>'
+              )
+          }
+      } 
         
         console.log(response.form_data.viz_type)
 
         switch(response.form_data.viz_type){
             // 做表单
             case 'filter_box':
+              $('#'+slice_id).empty()  //清空内容,重新画
               form_dom = generate_form(response,　slice_name)
               $('#'+slice_id).append(form_dom)
               break
 
             //做表
             case 'table':
+              $('#'+slice_id).empty()
               $('#'+slice_id).append('<table id="'+
                 slice_id +'Table" class="table"></table>')
               $('#'+slice_id+'Table').bootstrapTable('destroy').bootstrapTable(generate_table(response,　slice_name, position['size_y']))
@@ -237,14 +289,25 @@ function add_slice(position, url, slice_name, description, slice_width_unit) {
 
             //标记和分割，不用请求数据，直接显示数据,暂时支持html
             case 'separator': case 'markup':
+               $('#'+slice_id).empty()
                $('#'+slice_id).append(response.data.html)
                break
 
-            //画图
+            //画图 , 不需要清空DOM, clear()就可重新画
             default:
               // 高度留一点空隙
               $('#'+slice_id).css("margin-top", "5px")
-              var myChart= echarts.init(document.getElementById(slice_id), chart_style)
+              //TODO:chart_style 风格选择
+
+              var myChart
+              if(!force_refresh){
+                myChart = echarts.init(document.getElementById(slice_id), chart_style)
+                
+                echart_dict[slice_id] = myChart
+              } else {
+                myChart = echart_dict[slice_id]
+                myChart.clear()   
+              }
               generate_chart(myChart, response,　slice_name, description, url)
         }
 
@@ -511,17 +574,32 @@ function generate_chart(mychart, data, slice_name, description, url) {
         right: 12,
         feature : {
            //dataView : {show: true, readOnly: true}, //显示数据
-           saveAsImage: {show: true, title:'下载'},
+           saveAsImage: {show: true, title:'下载图片'},
            restore: {show: true},
            //dataZoom: {show: true}, //地图，热力图
            myDownloadCSV : {
                 show : true,
-                title : '自定义扩展方法',
+                title : '下载数据',
                 //path=svg, image=url
                 icon : 'path://M249.856 389.12v-178.176c0-45.056 36.864-81.92 81.92-81.92h456.704l163.84 167.936v337.92c0 12.288-8.192 20.48-20.48 20.48s-20.48-8.192-20.48-20.48V337.92h-102.4c-34.816 0-61.44-26.624-61.44-61.44v-106.496h-415.744c-22.528 0-40.96 18.432-40.96 40.96v178.176h456.704c22.528 0 40.96 18.432 40.96 40.96v286.72c0 22.528-18.432 40.96-40.96 40.96h-456.704v61.44c0 22.528 18.432 40.96 40.96 40.96h538.624c22.528 0 40.96-18.432 40.96-40.96v-61.44c0-12.288 8.192-20.48 20.48-20.48s20.48 8.192 20.48 20.48v61.44c0 45.056-36.864 81.92-81.92 81.92h-538.624c-45.056 0-81.92-36.864-81.92-81.92v-61.44h-137.216c-22.528 0-40.96-18.432-40.96-40.96v-286.72c0-22.528 18.432-40.96 40.96-40.96h137.216z m538.624-202.752v90.112c0 10.24 8.192 20.48 20.48 20.48h86.016l-106.496-110.592z m-473.088 350.208c-14.336-38.912-40.96-57.344-83.968-59.392-59.392 4.096-90.112 36.864-94.208 102.4 2.048 65.536 34.816 100.352 94.208 102.4 47.104 0 77.824-22.528 88.064-67.584l-36.864-12.288c-4.096 32.768-22.528 47.104-49.152 47.104-34.816-2.048-53.248-26.624-55.296-71.68 2.048-45.056 20.48-67.584 55.296-69.632 24.576 2.048 40.96 14.336 47.104 36.864l34.816-8.192z m26.624 79.872c10.24 45.056 38.912 65.536 90.112 65.536s75.776-20.48 77.824-59.392c0-24.576-14.336-40.96-40.96-53.248l-36.864-12.288c-28.672-6.144-43.008-16.384-40.96-28.672 2.048-16.384 14.336-22.528 34.816-24.576 24.576 0 38.912 10.24 43.008 32.768l36.864-8.192c-6.144-36.864-34.816-57.344-81.92-55.296-45.056 2.048-69.632 20.48-71.68 53.248-2.048 28.672 16.384 47.104 57.344 57.344 10.24 2.048 20.48 4.096 30.72 8.192 22.528 6.144 32.768 16.384 30.72 30.72-2.048 18.432-14.336 26.624-38.912 28.672-28.672 0-47.104-14.336-51.2-45.056l-38.912 10.24z m380.928-137.216h-40.96l-49.152 145.408c-4.096 12.288-6.144 18.432-6.144 20.48 0-4.096-2.048-10.24-6.144-20.48l-51.2-147.456h-40.96l77.824 198.656h43.008l73.728-196.608z',  
                 onclick : function (){
                     var tmp_url = url + '&csv=true'
                     window.open(tmp_url, "_blank")
+                }
+            },
+            myFroceRefresh : {
+                show : true,
+                title : '更新数据',
+                //path=svg, image=url
+                icon : 'path://M802.177829 256.786286C784.4992 112.142629 661.429029 0 512 0S239.5008 112.142629 221.822171 256.786286C98.000457 265.000229 0 367.786057 0 493.714286c0 131.285943 106.428343 237.714286 237.714286 237.714286l128 0 0-73.142857-128 0c-90.750171 0-164.571429-73.821257-164.571429-164.571429 0-86.213486 67.428571-158.250057 153.536-163.927771l60.392229-4.035657 7.356343-60.106971C307.856457 155.893029 401.3568 73.142857 512 73.142857s204.143543 82.750171 217.570743 192.4992l7.356343 60.106971 60.392229 4.035657C883.428571 335.464229 950.857143 407.5008 950.857143 493.714286c0 90.750171-73.821257 164.571429-164.571429 164.571429l-128 0 0 73.142857 128 0c131.285943 0 237.714286-106.428343 237.714286-237.714286C1024 367.786057 925.999543 265.000229 802.177829 256.786286z',
+                onclick : function (){
+                    var tmp_url = url
+                    tmp_url += '&force=true'
+                    //更新
+                    $.get(tmp_url).done(function (response) {
+                       mychart.clear()
+                       generate_chart(mychart, response, slice_name, description, tmp_url)
+                    })
                 }
             },
         }  
@@ -593,7 +671,6 @@ function generate_chart(mychart, data, slice_name, description, url) {
     }
 
     mychart.setOption(option, true)
-
 }
 
 //每个图形独立出来数据
@@ -2486,6 +2563,25 @@ function dual_line(data, fd) {
 
     return option
 }
+
+//自动刷新时间
+
+function interval_time(interval){
+
+  switch(interval){
+    case '10s':
+      return 10000
+    case '30s':
+      return 30000
+    case '10m':
+      return 600000
+    case '30m':
+      return 1800000
+    default:
+      return 0
+  }
+}
+
 
 //返回某一年的总天数  
 function GetYearDays(wYear) {
