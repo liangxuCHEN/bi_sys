@@ -10,6 +10,10 @@ from json import dumps as encodeJSON
 import random
 from datetime import datetime
 import time
+import pandas as pd
+import numpy as np
+
+from anthony_bi.planwork import PlanWork, MACHINE, GROUPS, WORK
 # Create your views here.
 
 # 产生随机订单
@@ -181,4 +185,17 @@ def api_show_c_data(request):
     for key, value in res.items():
         content[key[0]].append({'name': key[1], 'value': value})
 
+    return HttpResponse(encodeJSON({'data': content, 'status': 0, 'message': 'OK'}),content_type='application/json')
+
+
+def api_show_plan(request):
+    df = pd.read_json(encodeJSON(WORK))
+    new_plan = PlanWork(df, MACHINE, GROUPS['B'], 500)
+    res = new_plan.find_best_result()
+    content = {
+        'default_time':new_plan.default_res['max_time'],
+        'default_variance':new_plan.default_res['variance'],
+        'reslut': res
+    }
+    
     return HttpResponse(encodeJSON({'data': content, 'status': 0, 'message': 'OK'}),content_type='application/json')

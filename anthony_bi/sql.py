@@ -7,6 +7,14 @@ import pandas as pd
 
 # connection = pymssql.connect(**config_mssql)
 
+# self.db = {
+#           'host': '192.168.0.10',
+#           'port': 1433,
+#           'user': 'crm_bk',
+#           'password': 'bk@123456',
+#           'database': 'CRM_BAYKEE',
+#           'charset': 'utf8'
+#         }
 
 class Field(object):
 
@@ -59,13 +67,13 @@ class Model(dict, metaclass=ModelMetaclass): # python 3.x 以上
     #__metaclass__ = ModelMetaclass
     def __init__(self, **kwargs):
         self.db = {
-          'host': '192.168.0.10',
-          'port': 1433,
-          'user': 'crm_bk',
-          'password': 'bk@123456',
-          'database': 'CRM_BAYKEE',
-          'charset': 'utf8'
-        }
+                  'host': '192.168.0.10',
+                  'port': 1433,
+                  'user': 'crm_bk',
+                  'password': 'bk@123456',
+                  'database': 'CRM_BAYKEE',
+                  'charset': 'utf8'
+                }
         super(Model, self).__init__(**kwargs)
 
     def __getattr__(self, item):
@@ -207,7 +215,6 @@ class Order_info(Model):
     updated = StringField('updated')
     state = StringField('state')
     price = IntegerField('price')
-
 
 
 def save_test():

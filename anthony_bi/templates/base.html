@@ -8,11 +8,11 @@
     <meta name="author" content="Louis">
 
     <!-- Bootstrap core CSS -->
-    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+    <link href="http://192.168.0.186/static/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap theme -->
-    <link href="/static/css/bootstrap-theme.min.css" rel="stylesheet">
-    <script src="/static/js/jquery-2.0.3.min.js"></script>
-    <script src="/static/js/bootstrap.min.js"></script>
+    <link href="http://192.168.0.186/static/css/bootstrap-theme.min.css" rel="stylesheet">
+    <script src="http://192.168.0.186/static/js/jquery-2.0.3.min.js"></script>
+    <script src="http://192.168.0.186/static/js/bootstrap.min.js"></script>
     {% block head %}
     <title>{% block title %}BI_system{% endblock %}</title>
     {% endblock %}
@@ -34,10 +34,18 @@
              <div id="navbar" class="navbar-collapse collapse">
                <div class="navbar-collapse collapse">
                  <ul class="nav navbar-nav">
-                     <li ><a href="{%url 'add_order_date' %}">添加数据</a></li>
-                     <li ><a href="{%url 'show_order' %}">展现数据</a></li>
-                     <li ><a href="{%url 'show_order_2' %}">展现数据V2</a></li>
-                     <li ><a href="{%url 'show_demo' %}">图形模板</a></li>
+                     <!-- <li ><a href="{%url 'add_order_date' %}">添加数据</a></li> -->
+                     <li class="dropdown">
+                       <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">数据展现 <span class="caret"></span></a>
+                       <ul class="dropdown-menu">
+                          <li ><a href="{%url 'api_show_plan' %}">排产</a></li>
+                          <!--<li ><a href="{%url 'show_order_2' %}">展现数据V2</a></li>-->
+                          <!--<li role="separator" class="divider"></li>-->
+                          <li ><a href="{%url 'show_demo' %}">图形模板</a></li>
+                       </ul>
+                     </li>
+                      
+                    
                  </ul>
               </div>{% block nav %}{% endblock %}
             </div>

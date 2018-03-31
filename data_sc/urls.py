@@ -28,11 +28,12 @@ urlpatterns = [
     url(r'^show_order$', views.show_order, name='show_order'),
     url(r'^show_order_2', views.show_order_2, name='show_order_2'),
     url(r'^show_demo', views.show_demo, name='show_demo'),
-
-    # API
-    url(r'^api_order_info', views.api_order_info, name='api_order_info'),
-    url(r'^api_show_data', views.api_show_data, name='api_show_data'),
-    url(r'^api_show_c_data', views.api_show_c_data, name='api_show_c_data'),
+    #
+    # # API
+    # url(r'^api_order_info', views.api_order_info, name='api_order_info'),
+    # url(r'^api_show_data', views.api_show_data, name='api_show_data'),
+    # url(r'^api_show_c_data', views.api_show_c_data, name='api_show_c_data'),
+    url(r'^api_show_plan', views.api_show_plan, name='api_show_plan'),
 ]
 
 urlpatterns += staticfiles_urlpatterns()
