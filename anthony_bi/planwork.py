@@ -179,7 +179,7 @@ class PlanWork(object):
 
 def work_stage():
     conn = connect_sql()
-    sql_text = "SELECT TOP 30 WorkStageID as id, WorkStageName, Machine as machine, SMVTime as time FROM WorkStage;"
+    sql_text = "SELECT TOP 12 WorkStageID as id, WorkStageName, Machine as machine, SMVTime as time FROM WorkStage;"
     print(sql_text)
     try:
         df = pd.io.sql.read_sql(sql_text, con=conn)
@@ -193,14 +193,14 @@ if __name__ == '__main__':
     df = work_stage()
 
     # 机器数量
-    machine_num = df.groupby('machine').size() + 4
+    machine_num = df.groupby('machine').size() + 12
 
     # 分组情况
     group = {}
-    for g_name in 'ABCDE':
+    for g_name in 'ABC':
         group[g_name] = {}
         for i in range(0, len(machine_num)):
-            group[g_name][machine_num.index[i]]=[randint(1, machine_num[i]-2),  randint(0,1)]
+            group[g_name][machine_num.index[i]]=[randint(1, machine_num[i]-2),  randint(2,6)]
 
     print(machine_num)
     start = time.clock()
