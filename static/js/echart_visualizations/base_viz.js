@@ -13,8 +13,10 @@ const text_color = "#fff"
 const background_color = "#333"
 const colors = ['#fad797', '#59ccf7', '#c3b4df']
 
-//echart风格
-// var chart_style = 'dark' //html要相应引入主题js文件
+//echart风格 - 背景图片地址
+dark_background_url = 'http://7xrw4h.com1.z0.glb.clouddn.com/static/images/dark_backgroud.jpg'
+vintage_background_url = 'http://7xrw4h.com1.z0.glb.clouddn.com/static/images/vintage_backgroud.png'
+
 
 
 var echart_dict = {} //存放echart实例
@@ -136,7 +138,7 @@ function read_dashboard(dashboard_id, force_refresh = false, interval = 0) {
         }
         //标题
         $(dashboard_title_id).append(`<h2 style="${!(JSON.stringify(logo) == "{}")?`margin-left:${logo.width + 20}px `:'margin-left:10px'}">${response.dashboard.dashboard_title}
-        <span class="glyphicon glyphicon-heart-empty" aria-hidden="true" id="fravstar" onclick="fravstar(${response.dashboard.id})"></span>
+        <span class="glyphicon glyphicon-heart-empty" style='font-size:20px' aria-hidden="true" id="fravstar" onclick="fravstar(${response.dashboard.id})"></span>
         <div class="button_menu" id="button_menu"></div>
         <div class="pull-right" id="control_menu"></div></h2>`)
 
@@ -183,9 +185,9 @@ function read_dashboard(dashboard_id, force_refresh = false, interval = 0) {
         }
         var chart_style = response.dashboard.metadata.echart_style;
         if (chart_style=='dark'){
-            $('body,html').css('background-color', '#4d98b3');
+            $('body,html').css('background', 'url(' + dark_background_url + ')');
         } else if (chart_style == 'vintage'){
-            $('body,html').css('background-color', 'rgb(243,202,139)')
+            $('body,html').css('background', 'url(' + vintage_background_url + ')');
         }
         //操作样式框
         var radios = document.querySelectorAll("input[name='theme']")
@@ -350,6 +352,23 @@ function add_slice(position, url, slice_name, description, slice_width_unit, for
                 $('#' + slice_id).empty() //清空内容,重新画
                 form_dom = generate_form(response, 　slice_name)
                 $('#' + slice_id).append(form_dom)
+                if (chart_style == 'dark') {
+                    $('#' + slice_id).css({
+                        backgroundColor: 'rgb(51,51,51)',
+                    })
+                    $('#' + slice_id + '>form').css({
+                        margin: '5px 5px 0 5px',
+                        color: '#fff'
+                    })
+                } else if (chart_style == 'vintage') {
+                    $('#' + slice_id).css({
+                        backgroundColor: 'rgb(254, 248, 239)',
+                    })
+                    $('#' + slice_id + '>form label').css({
+                        margin: '5px 5px 0 5px',
+                        color: '#000'
+                    })
+                }
                 break
 
                 //做表
@@ -358,14 +377,34 @@ function add_slice(position, url, slice_name, description, slice_width_unit, for
                 $('#' + slice_id).append('<table id="' +
                     slice_id + 'Table" class="table"></table>')
                 $('#' + slice_id + 'Table').bootstrapTable('destroy').bootstrapTable(generate_table(response, 　slice_name, position['size_y']))
-                $('#' + slice_id + 'Table').bootstrapTable('hideLoading')
+                $('#' + slice_id + 'Table').bootstrapTable('hideLoading');
+                $('#' + slice_id).css({
+                    backgroundColor: '#fef8ef',
+                    margin:'10px 0'
+                })
                 break
 
                 //标记和分割，不用请求数据，直接显示数据,暂时支持html
             case 'separator':
             case 'markup':
                 $('#' + slice_id).empty()
-                $('#' + slice_id).append(response.data.html)
+                $('#' + slice_id).append(`<div class="markup_style ">${response.data.html}</div>`);
+                $('#' + slice_id).css({
+                    marginTop:'5px'
+                })
+                if(chart_style=="dark"){
+                    $('#' + slice_id).css({
+                        backgroundColor: '#333333',
+                    })
+                    $(".markup_style").addClass("style_dark")
+                } else if (chart_style == "vintage"){
+                    $('#' + slice_id).css({
+                        backgroundColor: '#fef8ef',
+                    })
+                    $(".markup_style").addClass("style_vintage")
+                } else if (chart_style == "macarons") {
+                    $(".markup_style").addClass("style_macarons")
+                }
                 break
 
                 //画图 , 不需要清空DOM, clear()就可重新画
@@ -477,9 +516,7 @@ function generate_table(response, 　slice_name, pageSize) {
                 label=response.form_data.granularity_sqla
             }else{
                 label=val
-            }
-            console.log(label);
-            
+            }          
             fields.push({
                 field: val,
                 title: verbose_map[response.form_data.datasource][label] || label, //别名转化
@@ -499,9 +536,9 @@ function generate_table(response, 　slice_name, pageSize) {
         pagination: true,
         pageNumber: 1,
         pageSize: pageSize * 3 - 6,
-        pageList: [10, 20, 30, 50],
+        pageList: [6,10, 20, 30, 50],
         cache: false,
-        //height:'80%',
+        // height:'600px',
         paginationPreText: "上一页",
         paginationNextText: "下一页",
         striped: true,
@@ -1131,9 +1168,9 @@ function big_number_viz(data, fd) {
     var sub_text_color
 
     if (compare_value < 0) {
-        sub_text_color = 'yellow'
-    } else {
         sub_text_color = 'green'
+    } else {
+        sub_text_color = 'red'
     }
     option = {
         title: [{
