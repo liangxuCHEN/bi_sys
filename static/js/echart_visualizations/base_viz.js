@@ -1,8 +1,10 @@
-const base_dashboard_url = 'http://192.168.0.94/superset/dashboard_json/'
-const base_slice_url = 'http://192.168.0.94/superset/explore_json/table/'
+const base_dashboard_url = '/superset/dashboard_json/'
+const base_slice_url = '/superset/explore_json/table/'
 // const base_dashboard_url = 'http://192.168.0.186:8088/superset/dashboard_json/'
 // const base_slice_url = 'http://192.168.0.186:8088/superset/explore_json/table/'
-const base_echart_form_url = 'http://192.168.0.94/echart_form/'
+const base_echart_form_url = '/echart_form/'
+const echart_css_api = '/save_dash_css/'
+const fav_url = '/superset/favstar/Dashboard/'
 const dashboard_title_id = '#dashboard_title'
 const dashboard_content_id = '#data_dash'
 
@@ -16,7 +18,6 @@ const colors = ['#fad797', '#59ccf7', '#c3b4df']
 //echart风格 - 背景图片地址
 dark_background_url = 'http://7xrw4h.com1.z0.glb.clouddn.com/static/images/dark_backgroud.jpg'
 vintage_background_url = 'http://7xrw4h.com1.z0.glb.clouddn.com/static/images/vintage_backgroud.png'
-
 
 
 var echart_dict = {} //存放echart实例
@@ -52,7 +53,7 @@ function sortNumber(a, b) {
 
 //收藏
 function fravstar(object_id) {
-    $.get('/superset/favstar/Dashboard/' + object_id + '/' + fravstar_action).done(function (response) {
+    $.get(fav_url + object_id + '/' + fravstar_action).done(function (response) {
         if (fravstar_action == 'select') {
             alert('收藏成功')
             $('#fravstar').removeClass("glyphicon-heart-empty").addClass('glyphicon-heart')
@@ -101,7 +102,6 @@ if (current_url.indexOf('?') > -1) {
 }
 
 function read_dashboard(dashboard_id, force_refresh = false, interval = 0) {
-    console.log(force_refresh, interval)
     var get_dashboat_url
     var slice_width_unit = Math.floor(document.documentElement.clientWidth / 12) - 1
     //请求数据
@@ -112,11 +112,11 @@ function read_dashboard(dashboard_id, force_refresh = false, interval = 0) {
         $(dashboard_title_id).children().remove()
 
         //访问禁止
-        // if (response.dashboard == undefined) {
-        //   alert("没有权限访问，请联系管理员"); 
-        //   window.location.href="/superset/welcome"
-        //   return
-        // }
+        if (response.dashboard == undefined) {
+          alert("没有权限访问，请联系管理员"); 
+          window.location.href="/superset/welcome"
+          return
+        }
         //权限问题提醒
         if (response.dashboard.status == 401) {
             $(dashboard_title_id).append('<div class="alert alert-warning" role="alert">' + response.dashboard.message + '<a href="/superset/welcome"> 返回首页</a></div>')
@@ -209,7 +209,7 @@ function read_dashboard(dashboard_id, force_refresh = false, interval = 0) {
         }
         $("#btn_confirm").click(function () {
             chart_style = $("input[name='theme']:checked").val();
-            $.get('http://192.168.0.94/save_dash_css/' + dashboard_id + "?echart_style=" + chart_style, function (res) {
+            $.get(echart_css_api + dashboard_id + "?echart_style=" + chart_style, function (res) {
                 if (res.status == 0) {
                     for (const key in echart_dict) {
                         echart_dict[key].dispose()
@@ -243,8 +243,6 @@ function read_dashboard(dashboard_id, force_refresh = false, interval = 0) {
                 }
             }
 
-            //console.log(position)
-
             var table_id = val.form_data.datasource.split('__')[0]
 
             var form_data = val.form_data
@@ -264,7 +262,6 @@ function read_dashboard(dashboard_id, force_refresh = false, interval = 0) {
             var url = base_slice_url + table_id + '?form_data=' + JSON.stringify(val.form_data)
 
 
-            //console.log(url)
             //TODO:这里是异步请求，放回数据有先后，移动端有区别，需要用postition来调整参数
             verbose_map = response.verbose_map
             if (interval > 0) {
@@ -287,7 +284,6 @@ $(function () {
     $("#btn_confirm_refresh").click(function () {
         var data_time = $('.refresh_select > p').attr('data-time');
         force_refresh = true
-        console.log(data_time);
         if (data_time > 0) {
             var timer = setInterval(function () {
                 read_dashboard(dashboard_id, force_refresh = force_refresh, interval = parseInt(data_time));
@@ -320,7 +316,7 @@ function add_slice(position, url, slice_name, description, slice_width_unit, for
 
     $.get(temp_url).done(function (response) {
 
-        // console.log(response)
+        console.log(response)
 
         //全屏定位
         //移动端定位-每个图一栏
@@ -344,7 +340,7 @@ function add_slice(position, url, slice_name, description, slice_width_unit, for
             }
         }
 
-        // console.log(response.form_data.viz_type)
+        console.log(response.form_data.viz_type)
 
         switch (response.form_data.viz_type) {
             // 做表单
@@ -406,23 +402,31 @@ function add_slice(position, url, slice_name, description, slice_width_unit, for
                     $(".markup_style").addClass("style_macarons")
                 }
                 break
-
-                //画图 , 不需要清空DOM, clear()就可重新画
+            
+            //画图 , 不需要清空DOM, clear()就可重新画
             default:
-                // 高度留一点空隙
-                $('#' + slice_id).css("margin-top", "5px")
-                //TODO:chart_style 风格选择
-
-                var myChart
-                if (!force_refresh) {
-                    myChart = echarts.init(document.getElementById(slice_id), chart_style)
-                    echart_dict[slice_id] = myChart
-
+                //TODO:根据不同类型选择对应的地图, 暂时默认是热力图
+                if ((response.form_data.viz_type == 'country_map') & (response.form_data.stat_unit == 'city')) {
+                    $('#' + slice_id).empty()
+                    $('#'+slice_id).append('<div id="'+ response.form_data.slice_id +'map" class="geo_map"></div>')
+                    inmapCount(response.data, response.form_data)
                 } else {
-                    myChart = echart_dict[slice_id]
-                    myChart.clear()
+                    // 高度留一点空隙
+                    $('#' + slice_id).css("margin-top", "5px")
+                    //TODO:chart_style 风格选择
+
+                    var myChart
+                    if (!force_refresh) {
+                        myChart = echarts.init(document.getElementById(slice_id), chart_style)
+                        echart_dict[slice_id] = myChart
+
+                    } else {
+                        myChart = echart_dict[slice_id]
+                        myChart.clear()
+                    }
+                    generate_chart(myChart, response, 　slice_name, description, url)
                 }
-                generate_chart(myChart, response, 　slice_name, description, url)
+                
         }
 
     }).fail(function () {
@@ -532,7 +536,7 @@ function generate_table(response, 　slice_name, pageSize) {
     }
 
     return table_option = {
-        //search: true,
+        search: response.form_data.include_search,  //是否添加搜索框
         pagination: true,
         pageNumber: 1,
         pageSize: pageSize * 3 - 6,
@@ -589,6 +593,7 @@ function generate_chart(mychart, data, slice_name, description, url) {
         case 'country_map':
             if (data.form_data.stat_unit == 'city') {
                 option = china_city(data.data, data.form_data)
+                //option = 
             } else {
                 option = china_map(data.data, data.form_data)
             }
@@ -606,7 +611,11 @@ function generate_chart(mychart, data, slice_name, description, url) {
             option = word_cloud(data.data, data.form_data)
             break;
         case 'treemap':
-            option = treemap(data.data, data.form_data)
+            if(data.form_data.is_sunburst){
+                option = newSunburst(data.data, data.form_data)    
+            } else {
+                option = treemap(data.data, data.form_data)    
+            }
             break;
         case 'box_plot':
             option = box_plot(data.data, data.form_data)
@@ -819,7 +828,7 @@ function generate_chart(mychart, data, slice_name, description, url) {
 //每个图形独立出来数据
 
 //非时间序列的柱状图数据
-function gene_bar_series(data, legend, y_axis_format, show_max_min, show_aver, type = 'bar', boundaryGap = true) {
+function gene_bar_series(data, legend, fd, type = 'bar', boundaryGap = true) {
     var serie = [];
     var areaStyle
     var stack
@@ -832,6 +841,9 @@ function gene_bar_series(data, legend, y_axis_format, show_max_min, show_aver, t
         areaStyle = {}
         stack = undefined
     }
+
+    console.log(data)
+
     data.forEach(function (val, index, arr) {
         var item = {
             name: legend[index],
@@ -843,11 +855,8 @@ function gene_bar_series(data, legend, y_axis_format, show_max_min, show_aver, t
             data: val,
         }
 
-        //叠加状态 最后一个显示总数
-        // console.log(show_max_min);
-
         //显示最大、最小值
-        if (show_max_min) {
+        if (fd.show_max_min) {
             item.markPoint = {
                 data: [{
                         type: 'max',
@@ -857,8 +866,7 @@ function gene_bar_series(data, legend, y_axis_format, show_max_min, show_aver, t
                                 label: {
                                     show: true,
                                     formatter: function (params, index) {
-                                        console.log(params);
-                                        return axisLabel_formatter(params.value, index, y_axis_format);
+                                        return axisLabel_formatter(params.value, index, fd.y_axis_format);
                                     }
                                 }
                             }
@@ -872,8 +880,7 @@ function gene_bar_series(data, legend, y_axis_format, show_max_min, show_aver, t
                                 label: {
                                     show: true,
                                     formatter: function (params, index) {
-                                        console.log(params);
-                                        return axisLabel_formatter(params.value, index, y_axis_format);
+                                        return axisLabel_formatter(params.value, index, fd.y_axis_format);
                                     }
                                 }
                             }
@@ -885,7 +892,7 @@ function gene_bar_series(data, legend, y_axis_format, show_max_min, show_aver, t
 
 
         // 显示平均值
-        if (show_aver) {
+        if (fd.show_aver) {
             item.markLine = {
                 data: [{
                     type: 'average',
@@ -895,8 +902,7 @@ function gene_bar_series(data, legend, y_axis_format, show_max_min, show_aver, t
                             label: {
                                 show: true,
                                 formatter: function (params, index) {
-                                    console.log(params);
-                                    return axisLabel_formatter(params.value, index, y_axis_format);
+                                    return axisLabel_formatter(params.value, index, fd.y_axis_format);
                                 }
                             }
                         }
@@ -904,6 +910,25 @@ function gene_bar_series(data, legend, y_axis_format, show_max_min, show_aver, t
                 }]
             }
         }
+
+        //显示目标线
+        if (fd.target_line){
+            
+            if (item.markLine == undefined) {
+                item.markLine = {data: []}
+            }
+
+            item.markLine.data.push([{
+                    //TODO: 目标线设计,颜色,显示值
+                    name: '目标线',
+                    coord: [0, fd.target_line]
+                },{
+                    coord: [val.length-1, fd.target_line]
+                }]
+            )
+            
+        }
+
         serie.push(item);
     })
     return serie
@@ -943,7 +968,6 @@ function pie_viz(data, fd) {
             }
         }
     }
-    // console.log(option);
 
 
     if (!fd.show_legend) {
@@ -1062,7 +1086,7 @@ function dist_bar_viz(data, fd) {
                 }
             }
         }],
-        series: gene_bar_series(values, legend, fd.y_axis_format, fd.show_max_min, fd.show_aver),
+        series: gene_bar_series(values, legend, fd),
 
     }
 
@@ -1128,7 +1152,7 @@ function time_line_viz(data, fd, boundaryGap = true) {
                 }
             }
         }],
-        series: gene_bar_series(values, legend, fd.y_axis_format, fd.show_max_min, fd.show_aver, type = 'line', boundaryGap = boundaryGap)
+        series: gene_bar_series(values, legend, fd, type = 'line', boundaryGap = boundaryGap)
     }
 
     //console.log('max_min:',  fd.y_axis_bounds)
@@ -1429,19 +1453,221 @@ function china_city(data, fd) {
     return option
 }
 
+// 新增旭日饼图 -- treemap_data
+function newSunburst(data, fd) {
+    var values = [];
+    var data_color = ['red', 'orange', 'green', 'blue'];
+    var data = data[0]  // 只获取第一个数据, 多个饼图暂时不考虑
+    var other_childern = [];
+    
+    data.children.forEach(function(val, index){
+        if (index <= data_color.length) {
+            values.push(val)
+        } else {
+            val['itemStyle'] = {
+                color: data_color[index % data_color.length]
+            }
+            other_childern.push(val)
+        }
+    })
+
+    values.push({
+        name: 'other',
+        itemStyle: {
+            color: 'purple'
+        },
+        children: other_childern
+    })
+
+    option = {
+        tooltip: optionTooltip(fd),
+        series: {
+            type: 'sunburst',
+            highlightPolicy: 'ancestor',
+            data: values,
+            radius: [0, '95%'],
+            sort: null,
+            levels: [{}, {
+                r0: '15%',
+                r: '35%',
+                itemStyle: {
+                    borderWidth: 2
+                },
+                label: {
+                    rotate: 'tangential',
+                    minAngle: 0.3
+                }
+            }, {
+                r0: '35%',
+                r: '70%',
+                label: {
+                    align: 'right'
+                }
+            }, {
+                r0: '70%',
+                r: '72%',
+                label: {
+                    position: 'outside',
+                    padding: 3,
+                    silent: false
+                },
+                itemStyle: {
+                    borderWidth: 3
+                }
+            }]
+        }
+    };
+    return option;
+}
+
+// 新增inmap
+function inmapCount(data, fd) {
+    var table_id = fd.datasource
+    var values = []
+    data.forEach(function (val, index, arr) {
+        var geoCoord = geoCoordMap[val.country_id];
+        if (geoCoord) {
+            values.push({
+                'count': val.metric,
+                'lng': geoCoord[0],
+                'lat': geoCoord[1],
+                'name': val.country_id,
+            })
+        }
+    })
+    var inmap = new inMap.Map({
+        id: fd.slice_id+'map',
+        center: ["105.403119", "38.028658"],
+        skin: "WhiteLover",   //TODO 换背景参数
+        zoom: {
+            value: 5,
+            show: true,
+            max: 18,
+            min: 5
+        },
+    })
+
+    var overlay
+
+    switch (fd.inmap_type){
+        case 'Heat':
+            overlay = new inMap.HeatOverlay({
+                //TODO: 热力图颜色设置
+                style: {
+                    normal: {
+                        radius: fd.max_bubble_size, // 半径
+                    }
+                },
+                data: values,
+                event: {
+                    onState(state) {
+                        // console.log('地图变化状态', state); //滚动变化
+                    }
+                }
+            })
+        break
+
+        case 'Honeycomb':
+            overlay = new inMap.HoneycombOverlay({
+                tooltip: {
+                    show: true,
+                    formatter: '{count}'
+                },
+                legend: {
+                    show: true,
+                    title: verbose_map[table_id][fd.secondary_metric] || fd.secondary_metric
+                },
+                style: {
+                    colors: [
+                        "rgba(156,200,249,0.7)", "rgba(93,158,247,0.7)",
+                        "rgba(134,207,55,0.7)",
+                        "rgba(252,198,10,0.7)", "rgba(255,144,0,0.7)", "rgba(255,72,0,0.7)",
+                        "rgba(255,0,0,0.7)"
+                    ],
+                    normal: {
+                        backgroundColor: 'rgba(200, 200, 200, 0.5)',
+                        padding: 3,
+                        size: fd.max_bubble_size,
+                    },
+                    mouseOver: {
+                        shadowColor: 'rgba(255, 250, 255, 1)',
+                        shadowBlur: 20,
+                    },
+                    selected: {
+                        backgroundColor: 'rgba(184,0,0,1)',
+                        borderColor: "rgba(255,255,255,1)"
+                    },
+                },
+                data: values
+            })
+        break;
+
+        default:
+            overlay = new inMap.DotOverlay({
+                tooltip: {
+                    show: true,
+                    formatter: function(params) {
+                        return (`<p>${params.name}:${params.count}</p>`)
+                    },
+
+                },
+                legend: {
+                    show: true,
+                    title: verbose_map[table_id][fd.secondary_metric] || fd.secondary_metric
+                },
+                style: {
+                    colors: [    //加颜色能自动区分
+                        "rgba(156,200,249,0.7)",
+                        "rgba(93,158,247,0.7)",
+                        "rgba(134,207,55,0.7)",
+                        "rgba(252,198,10,0.7)",
+                        "rgba(255,144,0,0.7)",
+                        "rgba(255,72,0,0.7)",
+                        "rgba(255,0,0,0.7)"
+                    ],
+                    normal: {
+                        backgroundColor: 'rgba(200, 200, 50, 1)',
+                        borderWidth: 1,
+                        borderColor: "rgba(255,255,255,1)",
+                        size: 10,
+                        label: {     //地方名字
+                           show: true,
+                           color: "rgba(255,0,0,1)"
+                        }
+                    },
+                    mouseOver: {
+                        backgroundColor: 'rgba(200, 200, 200, 1)',
+                        borderColor: "rgba(255,255,255,1)",
+                        borderWidth: 4,
+                    },
+                    selected: {
+                        backgroundColor: 'rgba(184,0,0,1)',
+                        borderColor: "rgba(255,255,255,1)"
+                    },
+                },
+                data: values,
+                event: {
+                    // onMouseClick: function (item, event) {
+                    //     //能获取当前点的信息
+                    // }
+                }
+            });
+    }
+
+    inmap.add(overlay)
+
+}
 
 //词云
 function word_cloud(data, fd) {
     // 数据适配echart格式
     var option = {}
     var values = []
-    //var legend = []
     data.forEach(function (val, index, arr) {
         values.push({
             'value': val.size,
             'name': val.text
         })
-        //legend.push(val.text)        
     })
     option = {
         tooltip: optionTooltip(fd),
@@ -1626,7 +1852,7 @@ function cal_heatmap(data, fd) {
     var option
     var date_value = []
     var max_value = 0
-    var start_year = numberToDatetime(data.start).split('-')[0]
+    var start_year = numberToDatetime(data.start).split('/')[0]
 
     for (val in data.timestamps) {
         if (data.timestamps[val] > max_value) {
@@ -2069,9 +2295,6 @@ function sunburst(data, fd) {
 
     })
 
-    //console.log(values[1])
-    //console.log(values[1].sort())
-
     //转换为符合echart格式
 
     //最里面一层
@@ -2139,7 +2362,6 @@ function sunburst(data, fd) {
     //console.log(option)
     return option
 }
-
 
 //桑基图
 function sankey(data, fd) {
@@ -2401,7 +2623,6 @@ function parallel(data, fd) {
         parallelAxis[1]['inverse']=true;//第二条坐标轴翻转
         parallelAxis[1]['nameLocation'] = 'start';//第二条坐标轴名称显示位置
     }
-    console.log(parallelAxis);
     
 
     option = {
